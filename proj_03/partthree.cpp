@@ -7,6 +7,39 @@
 
 #include "partthree_h"
 
+int main(){
+
+	node *head = NULL;
+	head = malloc(sizeof(node));
+
+	if (head == NULL) {
+		return 1;
+	}
+
+
+
+	return 0;
+}
+
+void importList(struct node* head, string& file){
+	int data;
+	ifstream f(file);
+
+	if (f.is_open()) {
+		while (f >> data) {
+			if (head == NULL){
+				head->data = data;
+				head->next = NULL;
+			}
+
+			if (!push(head, data)) {
+				cout << "Error adding to linked list!" << endl;
+				return -1;
+			}
+		}
+	}
+}
+
 int getLenth(struct node* head) {
 	struct node* current = head;
 	int count = 0;
@@ -18,7 +51,7 @@ int getLenth(struct node* head) {
 
 	return count;
 }
-boolean insertAtEnd(struct node* head, int data) {
+boolean push(struct node* head, int data) {
 	struct node* current = head;
 	boolean success = false;
 
@@ -27,17 +60,25 @@ boolean insertAtEnd(struct node* head, int data) {
 	temp->data = data;
 	temp->next = NULL;
 
-	while (current != NULL) {
+	while (current->next != NULL) {
 		current = current->next;
 	}
 
-	current->next = element;
+	current->next = temp;
 
-	if (current->next == element && element->next == NULL) {
+	if (current->next == temp && temp->next == NULL) {
 		success = true;
 	}
 
 	return success;
+}
+
+void print(struct node* head) {
+	struct node* current = head;
+
+	while (current != NULL){
+		cout << current->data << endl;
+	}
 }
 
 boolean insertAtBeginning(struct node** headRef, int data) {

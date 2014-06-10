@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -16,6 +18,8 @@ typedef struct node {
 };
 
 int getLenth(struct node*);
-boolean insertAtEnd(struct node*, int);
+boolean push(struct node*, int);
 boolean insertAtBeginning(struct node**, int);
 boolean remove(struct node*, struct node*);
+void importList(struct node*, string&);
+void print(struct node*);
