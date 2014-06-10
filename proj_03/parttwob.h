@@ -4,3 +4,5 @@
 // Matthew Tinney and Shade Alabsa
 // Date: 10 June 2014
 // File: parttwob.h
+
+using namespace std;

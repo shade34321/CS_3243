@@ -3,4 +3,6 @@
 // Project 3: Forks and Threads
 // Matthew Tinney and Shade Alabsa
 // Date: 10 June 2014
-// File: parttwob.h
+// File: partthreeb.h
+
+using namespace std;

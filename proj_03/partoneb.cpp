@@ -3,4 +3,6 @@
 // Project 3: Forks and Threads
 // Matthew Tinney and Shade Alabsa
 // Date: 10 June 2014
-// File: parttwob.cpp
+// File: partoneb.cpp
+
+#include "partoneb_h"
