@@ -9,9 +9,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 using namespace std;
 
+//Number of children we would like
 #define NUM_CHILD 4
 
 pid_t performFork();
@@ -21,23 +23,25 @@ int main() {
 	pid_t children[NUM_CHILD];
 	int i;
 
+	//Create the children processes.
 	for (i = 0; i < NUM_CHILD; i++){
 		cout << "PERFORMING FORK " << i << endl;
-		children[i] = performFork();
-		
+		children[i] = performFork();		
 	}
+
+
+	simulateBusyWork('P');
 
 	for (i = 0; i < NUM_CHILD; i++) {
 		wait(NULL);
 	}
+
+    return 0;
 }
 
 pid_t performFork() {
 	pid_t pid;
-	pid_t ppid = getpid();
-
-	//if (ppid ==)
-	//fork a process
+	
 	pid = fork();
 
 	//determine if this process is the parent or the child
@@ -45,15 +49,11 @@ pid_t performFork() {
 		fprintf(stderr, "Fork failed.\n");
 		return 1;
 	} else if (pid == 0 ) { //Child process
-		(void)setsid();
-		//(void)umask((mode_t)066);
-		// Child Process continues further execution...
-		// Become Process Group Leader
-		
-
 		simulateBusyWork('C');
+		exit(0);
 	} else { //parent process
-		simulateBusyWork('P');
+		//We handle the parent's busy work in main
+		//If we did it here then the parent would be doing busy work with one child on 4 seperate occasions and not with 4 children at once.
 	}
 
 	return pid;
@@ -62,11 +62,14 @@ pid_t performFork() {
 void simulateBusyWork(char ch) {
 	int i, j;
 
-	for(i = 0; i < 5; i++) {
-		for (j = 0; j < 5; j++){
+	for (i = 0; i < 1000000; i++) {
+		for (j = 0; j < 1000000; j++){
 			; //does nothing but waste time
 		}
-		cout << ch << getpid() << ": " << i << endl;
+		//only print out each 1000 - it got a bit cumbersome.
+        if((i%1000) == 0) {
+    		cout << ch << getpid() << ": " << i << endl;
+        }
 	}
 
 	cout << "Process " << getpid() << " finished its work." << endl;
