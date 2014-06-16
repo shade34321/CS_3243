@@ -20,21 +20,41 @@ pid_t performFork();
 void simulateBusyWork(char);
 
 int main() {
-	pid_t children[NUM_CHILD];
-	int i;
+	pid_t children[NUM_CHILD], endID;
+	int i, status;
 
 	//Create the children processes.
 	for (i = 0; i < NUM_CHILD; i++){
-		cout << "PERFORMING FORK " << i << endl;
-		children[i] = performFork();		
+		children[i] = performFork();
+        cout << "A child process with PID " << children[i] << " was created." << endl;
 	}
 
 
 	simulateBusyWork('P');
 
 	for (i = 0; i < NUM_CHILD; i++) {
-		wait(NULL);
-	}
+		//wait(NULL);
+        
+        cout << "WAITING ON " << children[i] << " TO FINISH!" << endl;
+        
+        endID = waitpid(children[i], &status, WNOHANG|WUNTRACED);
+        
+        cout << "endID: " << endID << endl;
+        
+        if (endID == -1) {            /* error calling waitpid       */
+            perror("waitpid error");
+            exit(EXIT_FAILURE);
+        } else if (endID == children[i]) {  /* child ended                 */
+            cout << "ENDID == children[i]: " << endID << " == " << children[i] << endl;
+            cout << "status: " << status << endl;
+            if (WIFEXITED(status)) {
+                cout << "P" << getpid() << ": Process " << children[i] << " has exited." << endl;
+            } else if (WIFSIGNALED(status)) {
+                printf("Child ended because of an uncaught signal.n");
+            } else if (WIFSTOPPED(status))
+                printf("Child process has stopped.n");
+        }
+    }
 
     return 0;
 }
@@ -62,14 +82,12 @@ pid_t performFork() {
 void simulateBusyWork(char ch) {
 	int i, j;
 
-	for (i = 0; i < 1000000; i++) {
-		for (j = 0; j < 1000000; j++){
+	for (i = 0; i < 100	; i++) {
+		for (j = 0; j < 10000000; j++){
 			; //does nothing but waste time
 		}
 		//only print out each 1000 - it got a bit cumbersome.
-        if((i%1000) == 0) {
-    		cout << ch << getpid() << ": " << i << endl;
-        }
+        cout << ch << getpid() << ": " << i << endl;
 	}
 
 	cout << "Process " << getpid() << " finished its work." << endl;
