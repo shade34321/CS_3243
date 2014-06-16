@@ -60,13 +60,14 @@ int main() {
 	t = list.head;
 
 	for (i = 0; i < 6; i++){
-		if (i == -1) {
+		if (i == 3) {
 			if (insert(&list, t, i)) {
 				cout << "ERROR: Error inserting element " << i << " into list." << endl;
 				return -1;
 			}
 		}
-		//t = t->next;
+		if (t->next != NULL) 
+			t = t->next;
 	}
 
 	print(&list);
@@ -118,22 +119,6 @@ int insert(List *list, Node *n, int data) {
 			list->head = t;
 			list->size++;
 		}
-
-		/**For inserting at the back and having an empty list
-		if (list->head == NULL) {
-		list->head = t;
-		list->head->next = list->tail;
-		list->tail = t;
-		list->tail->prev = list->head;
-		list->size++;
-		}
-		else {
-		t->prev = list->tail;
-		list->tail = list->tail->next = t;
-
-		list->size++;
-		}*/
-
 	} else if (n == list->tail) {
 		  t->prev = list->tail;
 		  list->tail = list->tail->next = t;
