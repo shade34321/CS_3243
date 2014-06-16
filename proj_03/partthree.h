@@ -9,6 +9,9 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
+#include <pthread.h>
+#include <time.h>
 
 using namespace std;
 

@@ -5,112 +5,175 @@
 // Date: 10 June 2014
 // File: partthree.cpp
 
-#include "partthree_h"
+#include <stdlib.h>
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <pthread.h>
+#include <time.h>
 
-int main(){
+using namespace std;
 
-	node *head = NULL;
-	head = malloc(sizeof(node));
+struct Node {
+	int data;
+	Node *next;
+	Node *prev;
+};
 
-	if (head == NULL) {
-		return 1;
+struct List {
+	int size;
+	Node *head;
+	Node *tail;
+};
+
+void remove(List *);
+void print(List *);
+int insert(List *, Node *, int);
+int importList(List *, Node *, string);
+
+int main() {
+
+	List list;
+	
+	list.size = 0;
+	list.head = NULL;
+	list.tail = NULL;
+
+	/*
+	if (importList(&list, "numbers250.txt")){
+		cout << "ERROR: Error trying to import list." << endl;
+	}
+	*/
+
+	int i;
+	for (i = 0; i < 6; i++) {
+		if(i == 3)
+            i++;
+        if (insert(&list, list.head, i)) {
+			cout << "ERROR: Error inserting element " << i << " into list." << endl;
+			return -1;
+		}
 	}
 
+	Node *t;
+	t = list.head;
 
+	for (i = 0; i < 6; i++){
+		if (i == -1) {
+			if (insert(&list, t, i)) {
+				cout << "ERROR: Error inserting element " << i << " into list." << endl;
+				return -1;
+			}
+		}
+		//t = t->next;
+	}
 
+	print(&list);
+
+	cout << "list.size: " << list.size << endl;
+
+	remove(&list);
+	
 	return 0;
 }
 
-void importList(struct node* head, string& file){
+int importList(List *list, string file){
 	int data;
-	ifstream f(file);
+	fstream f;
+	
+	f.open(file.c_str(), fstream::in);
 
 	if (f.is_open()) {
 		while (f >> data) {
-			if (head == NULL){
-				head->data = data;
-				head->next = NULL;
-			}
-
-			if (!push(head, data)) {
-				cout << "Error adding to linked list!" << endl;
+			if (insert(list, list->head, data)) {
 				return -1;
 			}
 		}
 	}
+
+	return 0;
 }
 
-int getLenth(struct node* head) {
-	struct node* current = head;
-	int count = 0;
+int insert(List *list, Node *n, int data) {
+	Node *t;
 
-	while (current != NULL) {
-		count++;
-		current = current->next;
+	if ((t = (Node *)malloc(sizeof(Node))) == NULL) {
+		return -1;
 	}
 
-	return count;
-}
-boolean push(struct node* head, int data) {
-	struct node* current = head;
-	boolean success = false;
+	t->data = data;
+	t->next = NULL;
+	t->prev = NULL;
 
-	struct node* temp;
-	temp = malloc(sizeof(struct node));
-	temp->data = data;
-	temp->next = NULL;
+	if (n == list->head || n == NULL) { //n == NULL) {
+		if (list->head == NULL){
+			list->head = t;
+			list->tail = t;
+			list->size++;
+		}
+		else {
+			t->next = list->head;
+			list->head->prev = t;
+			list->head = t;
+			list->size++;
+		}
 
-	while (current->next != NULL) {
-		current = current->next;
-	}
+		/**For inserting at the back and having an empty list
+		if (list->head == NULL) {
+		list->head = t;
+		list->head->next = list->tail;
+		list->tail = t;
+		list->tail->prev = list->head;
+		list->size++;
+		}
+		else {
+		t->prev = list->tail;
+		list->tail = list->tail->next = t;
 
-	current->next = temp;
+		list->size++;
+		}*/
 
-	if (current->next == temp && temp->next == NULL) {
-		success = true;
-	}
-
-	return success;
-}
-
-void print(struct node* head) {
-	struct node* current = head;
-
-	while (current != NULL){
-		cout << current->data << endl;
-	}
-}
-
-boolean insertAtBeginning(struct node** headRef, int data) {
-	boolean success = false;
-	struct node* temp;
-
-	temp = malloc(sizeof(struct node));
-	temp->data = data;
-	temp->next = *headRef;
-	*headRef = temp;
-
-	if (*headRef == temp && *headRef->next != NULL) {
-		success = true;
-	}
-
-	return success;
+	} else if (n == list->tail) {
+		  t->prev = list->tail;
+		  list->tail = list->tail->next = t;
+	} else {
+		  t->next = n; //Set the new nodes next to the element we're inserting before
+		  t->prev = n->prev; //Set the new nodes previous to the element we're inserting before previous
+		  n->prev->next = t; //set n's previous node next element to the new element we're inserting
+		  n->prev = t; //set n's previous to the new element we're inserting.
+	  }
+	return 0;
 }
 
-boolean remove(struct node* head, struct node* element) {
-	struct node* current = head;
-	boolean success = false;
+void print(List *list) {
+	Node *t;
+	int i;
 
-	while (current->next != element) {
-		current = current->next;
+	t = list->head;
+
+	for (i = 0; i < list->size; i++) {
+		cout << t->data << "<=> ";
+		t = t->next;
 	}
+	cout << endl;
 
-	current->next = element->next;
+	t = list->tail;
 
-	if (current->next == element->next){
-		success = true;
-		//delete element
+	for (i = 0; i < list->size; i++) {
+		cout << t->data << "<=> ";
+		t = t->prev;
 	}
+	cout << endl;
+}
 
-	return success;
+void remove(List *list){
+	Node *t;
+
+	while (list->head != NULL) {
+		t = list->head; //Get the head
+		list->head = list->head->next; //Get Next head
+		free(t);
+		list->size--;
+	}
 }
