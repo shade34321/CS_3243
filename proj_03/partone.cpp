@@ -34,33 +34,14 @@ int main() {
 	int current_children = NUM_CHILD;
 	while (current_children > 0) {
 		for (i = 0; i < NUM_CHILD; i++) {
-			//wait(NULL);
-
-			cout << "WAITING ON " << children[i] << " TO FINISH!" << endl;
-
 			endID = waitpid(children[i], &status, WNOHANG | WUNTRACED);
 
-			cout << "endID: " << endID << endl;
-
-			if (endID == -1) {            /* error calling waitpid       */
+			if (endID == -1) {            // error calling waitpid
 				perror("waitpid error");
 				exit(EXIT_FAILURE);
-			}
-			else if (endID == children[i]) {  /* child ended                 */
-				cout << "ENDID == children[i]: " << endID << " == " << children[i] << endl;
-				cout << "status: " << status << endl;
+			} else {  // child ended
 				current_children--;
-				if (WIFEXITED(status)) {
-					cout << "P" << getpid() << ": Process " << children[i] << " has exited." << endl;
-					current_children--;
-				} else if (WIFSIGNALED(status)) {
-					printf("Child ended because of an uncaught signal.n");
-					current_children--;
-				} else if (WIFSTOPPED(status)) {
-					printf("Child process has stopped.n");
-					current_children--;
-				}
-
+				cout << "P" << getpid() << ": Process " << children[i] << " has exited." << endl;
 			}
 		}
 	}
@@ -78,7 +59,6 @@ pid_t performFork() {
 		return 1;
 	} else if (pid == 0 ) { //Child process
 		simulateBusyWork('C');
-		cout << getpid() << "WAITING FOR INPUT TO FINISH" << endl;
 		exit(0);
 	} else { //parent process
 		//We handle the parent's busy work in main
@@ -95,7 +75,6 @@ void simulateBusyWork(char ch) {
 		for (j = 0; j < 10000000; j++){
 			; //does nothing but waste time
 		}
-		//only print out each 1000 - it got a bit cumbersome.
         cout << ch << getpid() << ": " << i << endl;
 	}
 
