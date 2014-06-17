@@ -59,10 +59,19 @@ int createThreads(int numDarts, int numThreads){
 	int i;
 	void *ret;
 
+	if (!returnThreads){
+		exit(-1);
+	}
+
 	for (i = 0; i < numThreads; i++){
 		returnThreads[i].numDarts = numDarts / numThreads;
 		if (pthread_create(&threads[i], NULL, &throwDart, &returnThreads[i]) != 0) {
 			perror("pthread_create() error");
+
+			if (returnThreads){
+				free(returnThreads);
+			}
+
 			exit(1);
 		}
 	}
@@ -70,6 +79,11 @@ int createThreads(int numDarts, int numThreads){
 	for (i = 0; i < numThreads; i++){
 		if (pthread_join(threads[i], &ret) != 0) {
 			perror("pthread_join() error");
+
+			if (returnThreads){
+				free(returnThreads);
+			}
+
 			exit(3);
 		}
 		hit += returnThreads[i].hits;
