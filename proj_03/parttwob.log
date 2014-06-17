@@ -1,0 +1,25 @@
+Number of darts: 10000000
+Number of hits: 7852437
+Number of misses: 2147563
+Time elapsed was: 1.000000
+PI ~= 3.140975
+Number of darts: 10000000
+Number of hits: 7854422
+Number of misses: 2145578
+Time elapsed was: 0.000000
+PI ~= 3.141769
+Number of darts: 10000000
+Number of hits: 7851275
+Number of misses: 2148725
+Time elapsed was: 1.000000
+PI ~= 3.140510
+Number of darts: 10000000
+Number of hits: 7855479
+Number of misses: 2144521
+Time elapsed was: 0.000000
+PI ~= 3.142192
+Number of darts: 10000000
+Number of hits: 7856100
+Number of misses: 2143900
+Time elapsed was: 0.000000
+PI ~= 3.142440

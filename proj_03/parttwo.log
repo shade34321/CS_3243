@@ -1,0 +1,15 @@
+Number of darts: 2500
+Number of hits: 1984
+Number of misses: 516
+Time elapsed was: 0.000000
+PI ~= 3.174400
+Number of darts: 1000000
+Number of hits: 784964
+Number of misses: 215036
+Time elapsed was: 0.000000
+PI ~= 3.139856
+Number of darts: 10000000
+Number of hits: 7848521
+Number of misses: 2151479
+Time elapsed was: 0.000000
+PI ~= 3.139408
