@@ -22,17 +22,16 @@ double calculatePi(long, long);
 bool inside(double, double);
 
 int main() {
-    int i, numThreads[3] = {1, 2, 10};
+    int i, numThreads[3] = {1, 1, 1};
     double pi;
     long hit, duration[3] = {2500, 1000000, 10000000};
-	time_t start, end;
+    time_t start, end;
     
     srand(time(NULL));
     
     for (i = 0; i < 3; i++) {
         time(&start);
         
-		printf("Creating new task with %d number of darts and %d number of threads\n", duration[i], numThreads[i]);
         hit = legion(duration[i], numThreads[i]);
         
         time(&end);
@@ -53,27 +52,19 @@ long legion(long duration, int numThreads) {
 	pthread_t threads[numThreads];
     long hit, numDarts = duration;
     int returnThread[numThreads];
+    int i;
+        
+    numDarts = (numDarts/numThreads);
     
-	printf("Here we go\n");
-/*
-    if(numThreads == 1) {
-        hit = ((long) throwDart(&numDarts));
-    } else {
-  */      int i;
-        
-        numDarts = (numDarts/numThreads);
-        
-        for(i = 0; i < numThreads; i++){
-			printf("Creating thread %d", i);
-            returnThread[i] = pthread_create( &threads[i], NULL, &throwDart, &numDarts);
-        }
-        
-        for(i = 0; i < numThreads; i++) {
-			void *temp;
-            pthread_join(threads[i], &temp);
-			hit += ((long)temp);
-        }
-   // }
+    for(i = 0; i < numThreads; i++){
+        returnThread[i] = pthread_create( &threads[i], NULL, &throwDart, &numDarts);
+    }
+    
+    for(i = 0; i < numThreads; i++) {
+        void *temp;
+        pthread_join(threads[i], &temp);
+        hit += ((long)temp);
+    }
 	
 	return hit;
 }
@@ -85,9 +76,6 @@ void *throwDart(void* duration) {
 	numDarts = ((long *)(duration));
 	double x, y, pi;
     
-	printf("Inside throwDart with %ld darts to be thrown\n", *numDarts);
-	printf("TID: %u\n", (unsigned int)pthread_self());
-
 	for (i = 0; i < *numDarts; i++) {
 		x = getPoint();
 		y = getPoint();
