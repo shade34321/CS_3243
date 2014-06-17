@@ -61,14 +61,17 @@ int main() {
 
 	print(&list);
 
-	quick_sort(&list, list.size);
+	//quick_sort(&list, list.size);
 
 	cout << "list.size: " << list.size << endl;
 
 	Node *t;
-	t = get_nth_element(&list, 2);
-
-	cout << "The second element is: " << t->data << endl;
+	t = get_nth_element(&list, 4);
+	if (t != NULL) {
+		cout << "The fourth element is: " << t->data << endl;
+	} else {
+		cout << "ERROR GETTING Nth ELEMENT" << endl;
+	}
 
 	remove(&list);
 	
@@ -97,15 +100,19 @@ Node * get_nth_element(List *list, int elementNum) {
 	Node *t;
 	t = list->head;
 
-	for (i = 0; i < elementNum; i++){
-		if (t->next == NULL){
-			t = NULL;
-			return t;
+	if (elementNum == 0) {
+		return list->head;
+	} else if (elementNum == list->size){
+		return list->tail;
+	} else {
+		for (i = 0; i < elementNum; i++){
+			if (t->next == NULL){
+				t = NULL;
+				return t;
+			}
+			t = t->next;
 		}
-
-		t = t->next;
 	}
-
 	return t;
 }
 

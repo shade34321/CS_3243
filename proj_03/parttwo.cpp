@@ -14,21 +14,16 @@
 
 using namespace std;
 
-struct dartRatio {
-    long duration;
-    long* hit;
-};
-
 long legion(long, int);
-void *throwDart(void*);
+void *throwDart(void *);
 double getPoint();
 double calculatePi(long, long);
 bool inside(double, double);
 
 int main() {
-    int i, numThreads[3] = {1, 1, 1};
+    int i, numThreads[3] = {1, 2, 10};
     double pi;
-    long hit, duration[3] = {25000000, 500000000, 1000000000};
+    long hit, duration[3] = {2500, 1000000, 10000000};
 	time_t start, end;
     
     srand(time(NULL));
@@ -36,6 +31,7 @@ int main() {
     for (i = 0; i < 3; i++) {
         time(&start);
         
+		printf("Creating new task with %d number of darts and %d number of threads\n", duration[i], numThreads[i]);
         hit = legion(duration[i], numThreads[i]);
         
         time(&end);
@@ -53,51 +49,53 @@ int main() {
 }
 
 long legion(long duration, int numThreads) {
-	pthread_t threads[numthreads];
-    long hit;
+	pthread_t threads[numThreads];
+    long hit, numDarts = duration;
     int returnThread[numThreads];
-    struct dartRatio dr;
-    dr.hit = &hit;
     
+	printf("Here we go\n");
+/*
     if(numThreads == 1) {
-        dr.duration = duration;
-        return throwDart(duration);
+        hit = ((long) throwDart(&numDarts));
     } else {
-        int i;
+  */      int i;
         
-        dr.duration = (duration/numThreads);
+        numDarts = (numDarts/numThreads);
         
         for(i = 0; i < numThreads; i++){
-            returnThread[i] = pthread_create( &threads[i], NULL, throwDart(), &dr);
+			printf("Creating thread %d", i);
+            returnThread[i] = pthread_create( &threads[i], NULL, &throwDart, &numDarts);
         }
         
         for(i = 0; i < numThreads; i++) {
-            pthread_join(threads[i], NULL);
+			void *temp;
+            pthread_join(threads[i], &temp);
+			hit += ((long)temp);
         }
-    }
+   // }
 	
 	return hit;
 }
 
 void *throwDart(void* duration) {
     int i;
-    long hit = 0;
+	long hit = 0;
+	long *numDarts;
+	numDarts = ((long *)(duration));
 	double x, y, pi;
     
-	for (i = 0; i < duration; i++) {
+	printf("Inside throwDart with %ld darts to be thrown\n", *numDarts);
+
+	for (i = 0; i < *numDarts; i++) {
 		x = getPoint();
 		y = getPoint();
-		
-		//printf("x: %f\n", x);
-		//printf("y: %f\n", y);
-        
+		       
 		if (inside(x, y)) {
-			//printf("Inside\n");
 			hit++;
 		}
 	}
     
-    duration->hitß
+	pthread_exit((void *) hit);
 }
 
 //Check to see if the point is inside the circle
