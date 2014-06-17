@@ -31,6 +31,9 @@ void remove(List *);
 void print(List *);
 int insert(List *, Node *, int);
 int importList(List *, Node *, string);
+Node * get_nth_element(List *, int);
+void quick_sort(List *, int);
+Node * get_nth_element(List *, int);
 
 int main() {
 
@@ -46,33 +49,26 @@ int main() {
 	}
 	*/
 
+	int a[] = { 4, 65, 2, -31, 0, 99, 2, 83, 782, 1 };
 	int i;
-	for (i = 0; i < 6; i++) {
-		if(i == 3)
-            i++;
-        if (insert(&list, list.head, i)) {
+
+	for (i = 0; i < 10; i++) {
+        if (insert(&list, list.head, a[i])) {
 			cout << "ERROR: Error inserting element " << i << " into list." << endl;
 			return -1;
 		}
 	}
 
-	Node *t;
-	t = list.head;
-
-	for (i = 0; i < 6; i++){
-		if (i == 3) {
-			if (insert(&list, t, i)) {
-				cout << "ERROR: Error inserting element " << i << " into list." << endl;
-				return -1;
-			}
-		}
-		if (t->next != NULL) 
-			t = t->next;
-	}
-
 	print(&list);
 
+	quick_sort(&list, list.size);
+
 	cout << "list.size: " << list.size << endl;
+
+	Node *t;
+	t = get_nth_element(&list, 2);
+
+	cout << "The second element is: " << t->data << endl;
 
 	remove(&list);
 	
@@ -94,6 +90,23 @@ int importList(List *list, string file){
 	}
 
 	return 0;
+}
+
+Node * get_nth_element(List *list, int elementNum) {
+	int i;
+	Node *t;
+	t = list->head;
+
+	for (i = 0; i < elementNum; i++){
+		if (t->next == NULL){
+			t = NULL;
+			return t;
+		}
+
+		t = t->next;
+	}
+
+	return t;
 }
 
 int insert(List *list, Node *n, int data) {
@@ -161,4 +174,35 @@ void remove(List *list){
 		free(t);
 		list->size--;
 	}
+}
+
+void quick_sort(List *list, int n) {
+	if (list->size < 2) {
+		return; //Nothing to do
+	}
+
+	Node *p = get_nth_element(list, (n / 2));
+	Node *left = list->head;
+	Node *right = list->tail;
+
+	while (left->data < right->data) {
+		if (left->data < p->data) {
+			left = left->next;
+			continue;
+		}
+
+		if (right->data > p->data) {
+			right = right->prev;
+			continue;
+		}
+
+		int t = left->data;
+		left->data = right->data;
+		left = left->next;
+		right->data = t;
+		right = right->prev;
+	}
+
+	quick_sort(list, (n / 2 - 1));
+	quick_sort(list, (n / 2 + 1));
 }
