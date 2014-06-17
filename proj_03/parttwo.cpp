@@ -11,6 +11,7 @@
 #include <time.h>
 #include <iostream>
 #include <cmath>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -85,6 +86,7 @@ void *throwDart(void* duration) {
 	double x, y, pi;
     
 	printf("Inside throwDart with %ld darts to be thrown\n", *numDarts);
+	printf("TID: %u\n", (unsigned int)pthread_self());
 
 	for (i = 0; i < *numDarts; i++) {
 		x = getPoint();

@@ -1,1 +1,2 @@
-g++ -pthread -o parttwo parttwo.cpp && ./parttwo
+g++ -pthread -o parttwo parttwo.cpp
+./parttwo
