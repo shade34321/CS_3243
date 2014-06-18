@@ -1,8 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
 #include <time.h>
+#include <vector>
 
 using namespace std;
 
@@ -10,6 +12,8 @@ struct data {
 	int numDarts;
 	int hits;
 };
+
+int importList(vector<int> &);
 
 int main() {
 	int i;
@@ -48,6 +52,35 @@ int main() {
 	for (i = 0; i < numThreads; i++){
 		cout << returnThreads[i].numDarts << endl;
 		cout << returnThreads[i].hits << endl;
+	}
+
+	vector<int> list;
+
+	if (importList(list)){
+		return -1;
+	}
+
+	for (vector<int>::const_iterator i = list.begin(); i != list.end(); ++i){
+		cout << *i << ' ';
+	}
+
+	return 0;
+}
+
+int importList(vector<int> &list){
+	int data;
+	fstream f;
+
+	f.open("numbers.txt", fstream::in);
+
+	if (f.is_open()) {
+		while (f >> data) {
+			list.insert(list.begin(), data);
+		}
+	}
+	else {
+		cout << "Error importing file!" << endl;
+		return -1;
 	}
 
 	return 0;
