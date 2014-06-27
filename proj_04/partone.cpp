@@ -12,10 +12,12 @@
 #include <iostream>
 #include <cmath>
 #include <sys/types.h>
+#include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
-#define MAX_ELEMENTS 10
+#define MAX_ELEMENTS 1000
 
 struct node {
 	int data;
@@ -30,47 +32,90 @@ struct queue{
 	node *tail;
 };
 
-queue *q;
-//pthread_mutex_t lock;
+pthread_mutex_t lock;
+pthread_mutex_t full;
+pthread_mutex_t empty;
 
-void push(int);
-void pop();
-void printQ();
-//void doWork();
-//int insert_item(int *);
-//int remove_item(int *);
+
+void push(queue *, int);
+void pop(queue *);
+void printQ(queue *);
+void * producer(void *);
+void * consumer(void *);
+void emptyQ(queue *);
 
 int main(){
-	srand(time(NULL));
+	/**
+	if (argc != 4){
+		cerr << "Incorrect Usage!" << endl;
+		cerr << "You need to supply the number of producer threads, consumer threads, and how long to sleep for" << endl;
 
+	}
+	*/
+	pthread_t t1;
+	pthread_t t2;
+	
+	queue *q;
+
+	void *ret;
+
+	srand(time(NULL));
+		
 	q = (queue *)malloc(sizeof(queue));
-	q->buffer = (node *)malloc(sizeof(node)*MAX_ELEMENTS);
 	q->size = 0;
 	q->capacity = MAX_ELEMENTS;
 
 	q->head = NULL;
 	q->tail = NULL;
 
+	pthread_mutex_init(&lock, NULL);
+	pthread_mutex_init(&full, NULL);
+	pthread_mutex_init(&empty, NULL);
+
+	/**
 	for (int i = 0; i < MAX_ELEMENTS+1; i++){
 		int r = rand();
 		printf("random number is %d\n", r);
-		push(r);
+		push(q, r);
 	}
 
-	printQ();
+	printQ(q);
 
 	for (int i = 0; i < MAX_ELEMENTS; i++){
-		pop();
+		pop(q);
 	}
 
-	pop();
+	pop(q);
 	
-	printQ();
+	printQ(q);
+	*/
+
+	pthread_create(&t1, NULL, &producer, (void *)q);
+	sleep(10);
+	pthread_create(&t2, NULL, &consumer, (void *)q);
+
+	pthread_join(t1, &ret);
+	pthread_join(t2, &ret);
+
+	printQ(q);
+
+	pthread_mutex_destroy(&lock);
+	pthread_mutex_destroy(&full);
+	pthread_mutex_destroy(&empty);
+	emptyQ(q);
 
 	return 0;
 }
 
-void push(int data){
+void emptyQ(queue * q){
+	for (int i = 0; i < q->size; i++){
+		pop(q);
+	}
+
+	free(q);
+}
+
+void push(queue *q, int data){
 	if (q->size != q->capacity || q->size == 0) {
 		node *temp = (node *)malloc(sizeof(node));
 		temp->data = data;
@@ -82,24 +127,26 @@ void push(int data){
 			q->tail = temp;
 		}
 
+		printf("Pushing %d onto the queue!\n", q->tail->data);
 		q->size++;
 	} else {
 		printf("The queue is full!\n");
 	}
 }
 
-void pop(){
+void pop(queue *q){
 	if (q->size != 0){
 		node *temp = q->head;
 		q->size--;
 		q->head = temp->next;
+		printf("Popping %d off the queue!\n", temp->data);
 		free(temp);
 	} else {
 		printf("The queue is empty!\n");
 	}
 }
 
-void printQ(){
+void printQ(queue *q){
 	int i;
 
 	printf("Queue Capacity %d\nQueue Size %d\n", q->capacity, q->size);
@@ -114,27 +161,37 @@ void printQ(){
 	printf("\n");
 }
 
-/**
-void consumer(){
-	if (buffer[0]){
-
-	}
-}
-
-void producer(){
-	int num = (rand() % 200 + 1);
-	if ((rand() % 20001 - 10000) % 3 == 0){
-		if (insert_item(num)){
-			cout << "Error inserting into buffer!" << endl;
+void * consumer(void *s){
+	queue *q = (queue *)s;
+	int i = 0;
+	while (i < 100000000){
+		if ((rand() % 20001 - 10000) % 3 == 0) {
+			pthread_mutex_lock(&lock);
+			pop(q);
+			pthread_mutex_unlock(&lock);
+		} else {
+			sleep((rand() % 10 + 1));
 		}
+		i += .5;
 	}
+
+	pthread_exit(NULL);
 }
 
-int insert_item(int data){
+void * producer(void *s){
+	queue *q = (queue *)s;
+	int i = 0;
+	while (i < 100000000) {
+		int num = (rand() % 200 + 1);
+		if ((rand() % 20001 - 10000) % 7 == 0) {
+			pthread_mutex_lock(&lock);
+			push(q, num);
+			pthread_mutex_unlock(&lock);
+		} else {
+			sleep((rand() % 10 + 1));
+		}
+		i += .5;
+	}
 
+	pthread_exit(NULL);
 }
-
-int remove_item(){
-
-}
-*/
