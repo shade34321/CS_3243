@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 using namespace std;
 
@@ -33,8 +34,8 @@ struct queue{
 };
 
 pthread_mutex_t lock;
-pthread_mutex_t full;
-pthread_mutex_t empty;
+sem_t full;
+sem_t empty;
 
 
 void push(queue *, int);
@@ -69,8 +70,8 @@ int main(){
 	q->tail = NULL;
 
 	pthread_mutex_init(&lock, NULL);
-	pthread_mutex_init(&full, NULL);
-	pthread_mutex_init(&empty, NULL);
+	sem_init(&full, 0, 0);
+	sem_init(&empty, 0, 1000);
 
 	/**
 	for (int i = 0; i < MAX_ELEMENTS+1; i++){
@@ -91,7 +92,7 @@ int main(){
 	*/
 
 	pthread_create(&t1, NULL, &producer, (void *)q);
-	sleep(10);
+	sleep(2);
 	pthread_create(&t2, NULL, &consumer, (void *)q);
 
 	pthread_join(t1, &ret);
@@ -100,8 +101,8 @@ int main(){
 	printQ(q);
 
 	pthread_mutex_destroy(&lock);
-	pthread_mutex_destroy(&full);
-	pthread_mutex_destroy(&empty);
+	sem_destroy(&full);
+	sem_destroy(&empty);
 	emptyQ(q);
 
 	return 0;
@@ -127,7 +128,7 @@ void push(queue *q, int data){
 			q->tail = temp;
 		}
 
-		printf("Pushing %d onto the queue!\n", q->tail->data);
+		printf("%d!\n", q->tail->data);
 		q->size++;
 	} else {
 		printf("The queue is full!\n");
@@ -139,7 +140,7 @@ void pop(queue *q){
 		node *temp = q->head;
 		q->size--;
 		q->head = temp->next;
-		printf("Popping %d off the queue!\n", temp->data);
+		printf("%d!\n", temp->data);
 		free(temp);
 	} else {
 		printf("The queue is empty!\n");
@@ -164,15 +165,21 @@ void printQ(queue *q){
 void * consumer(void *s){
 	queue *q = (queue *)s;
 	int i = 0;
-	while (i < 100000000){
-		if ((rand() % 20001 - 10000) % 3 == 0) {
+	while (i < 50){
+		//if ((rand() % 20001 - 10000) % 3 == 0) {
+		if (1) {
+			wait(&empty);
 			pthread_mutex_lock(&lock);
+			printf("------> [Process %d] consuming ", pthread_self());
 			pop(q);
 			pthread_mutex_unlock(&lock);
+			signal(&full);
+			sleep(1);
 		} else {
 			sleep((rand() % 10 + 1));
 		}
-		i += .5;
+		i++;
+		printf("On iteration %d\n", i);
 	}
 
 	pthread_exit(NULL);
@@ -181,16 +188,22 @@ void * consumer(void *s){
 void * producer(void *s){
 	queue *q = (queue *)s;
 	int i = 0;
-	while (i < 100000000) {
+	while (i < 50) {
 		int num = (rand() % 200 + 1);
-		if ((rand() % 20001 - 10000) % 7 == 0) {
+		//if ((rand() % 20001 - 10000) % 7 == 0) {
+		if (1) {
+			wait(&full);
 			pthread_mutex_lock(&lock);
+			printf("[Process %d] producing ", pthread_self());
 			push(q, num);
 			pthread_mutex_unlock(&lock);
+			signal(&full);
+			sleep(1);
 		} else {
 			sleep((rand() % 10 + 1));
 		}
-		i += .5;
+		i++;
+		printf("On iteration %d\n", i);
 	}
 
 	pthread_exit(NULL);
