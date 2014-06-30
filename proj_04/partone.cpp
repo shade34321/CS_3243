@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <semaphore.h>
-
+#include <signal.h>
 using namespace std;
 
 #define MAX_ELEMENTS 1000
@@ -31,11 +31,13 @@ struct queue{
 	node *buffer;
 	node *head;
 	node *tail;
+	int sleep;
 };
 
 pthread_mutex_t lock;
 sem_t full;
 sem_t empty;
+int done;
 
 
 void push(queue *, int);
@@ -45,16 +47,22 @@ void * producer(void *);
 void * consumer(void *);
 void emptyQ(queue *);
 
-int main(){
-	/**
+int main(int argc, char* argv[]){
 	if (argc != 4){
 		cerr << "Incorrect Usage!" << endl;
-		cerr << "You need to supply the number of producer threads, consumer threads, and how long to sleep for" << endl;
-
+		cerr << "You need to supply the number of producer threads, consumer threads, and how long to sleep for like so" << endl;
+		cerr << "./partone numProducers numConsumers secondsToSleep" << endl;
+		exit(1);
 	}
-	*/
-	pthread_t t1;
-	pthread_t t2;
+
+	int numProd = atoi(argv[0]);
+	int numCons = atoi(argv[1]);
+	int ssleep = atoi(argv[2]);
+
+	done = 1; //condition variable to quit
+
+	pthread_t prod[numProd];
+	pthread_t cons[numCons];
 	
 	queue *q;
 
@@ -65,6 +73,7 @@ int main(){
 	q = (queue *)malloc(sizeof(queue));
 	q->size = 0;
 	q->capacity = MAX_ELEMENTS;
+	q->sleep = ssleep;
 
 	q->head = NULL;
 	q->tail = NULL;
@@ -73,30 +82,27 @@ int main(){
 	sem_init(&full, 0, 0);
 	sem_init(&empty, 0, 1000);
 
-	/**
-	for (int i = 0; i < MAX_ELEMENTS+1; i++){
-		int r = rand();
-		printf("random number is %d\n", r);
-		push(q, r);
+	for (int i = 0; i < numProd; i++){
+		pthread_create(&prod[i], NULL, &producer, (void *)q);
 	}
 
-	printQ(q);
-
-	for (int i = 0; i < MAX_ELEMENTS; i++){
-		pop(q);
-	}
-
-	pop(q);
-	
-	printQ(q);
-	*/
-
-	pthread_create(&t1, NULL, &producer, (void *)q);
 	sleep(2);
-	pthread_create(&t2, NULL, &consumer, (void *)q);
 
-	pthread_join(t1, &ret);
-	pthread_join(t2, &ret);
+	for (int i = 0; i < numCons; i++){
+		pthread_create(&cons[i], NULL, &producer, (void *)q);
+	}
+
+	sleep(((numProd * ssleep) + (numCons * ssleep)));
+	
+	done = 0;
+
+	for (int i = 0; i < numProd; i++) {
+		pthread_join(prod[i], &ret);
+	}
+	
+	for (int i = 0; i < numProd; i++) {
+		pthread_join(cons[i], &ret);
+	}
 
 	printQ(q);
 
@@ -109,6 +115,7 @@ int main(){
 }
 
 void emptyQ(queue * q){
+	cout << "Emptying out the queue so I can free it!" << endl;
 	for (int i = 0; i < q->size; i++){
 		pop(q);
 	}
@@ -150,6 +157,7 @@ void pop(queue *q){
 void printQ(queue *q){
 	int i;
 
+	printf("Current queue data looks like!\n");
 	printf("Queue Capacity %d\nQueue Size %d\n", q->capacity, q->size);
 	
 	node *temp = q->head;
@@ -165,22 +173,17 @@ void printQ(queue *q){
 void * consumer(void *s){
 	queue *q = (queue *)s;
 	int i = 0;
-	while (i < 50){
-		//if ((rand() % 20001 - 10000) % 3 == 0) {
-		if (1) {
-			wait(&empty);
-			pthread_mutex_lock(&lock);
-			printf("------> [Process %d] consuming ", pthread_self());
-			pop(q);
-			pthread_mutex_unlock(&lock);
-			signal(&full);
-			sleep(1);
-		} else {
-			sleep((rand() % 10 + 1));
-		}
-		i++;
-		printf("On iteration %d\n", i);
-	}
+	do{
+		sem_wait(&full);
+		pthread_mutex_lock(&lock);
+		printf("------> [Process %d] consuming ", pthread_self());
+		pop(q);
+		pthread_mutex_unlock(&lock);
+		sem_post(&empty);
+		//if ((rand() % 10 + 1) % 2 == 0) {
+			sleep(q->sleep);
+		//}
+	} while (done);
 
 	pthread_exit(NULL);
 }
@@ -188,23 +191,18 @@ void * consumer(void *s){
 void * producer(void *s){
 	queue *q = (queue *)s;
 	int i = 0;
-	while (i < 50) {
+	do {
 		int num = (rand() % 200 + 1);
-		//if ((rand() % 20001 - 10000) % 7 == 0) {
-		if (1) {
-			wait(&full);
-			pthread_mutex_lock(&lock);
-			printf("[Process %d] producing ", pthread_self());
-			push(q, num);
-			pthread_mutex_unlock(&lock);
-			signal(&full);
-			sleep(1);
-		} else {
-			sleep((rand() % 10 + 1));
-		}
-		i++;
-		printf("On iteration %d\n", i);
-	}
+		sem_wait(&empty);
+		pthread_mutex_lock(&lock);
+		printf("[Process %d] producing ", pthread_self());
+		push(q, num);
+		pthread_mutex_unlock(&lock);
+		sem_post(&full);
+		//if ((rand() % 10 + 1) % 2 == 1) {
+			sleep(q->sleep);
+		//}
+	} while (done);
 
 	pthread_exit(NULL);
 }
