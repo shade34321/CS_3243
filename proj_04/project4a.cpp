@@ -88,7 +88,7 @@ int main(int argc, char* argv[]){
 
 	pthread_mutex_init(&lockMem, NULL);
 	sem_init(&full, 0, 0);
-	sem_init(&empty, 0, 1000);
+	sem_init(&empty, 0, numProd);
 
 	cout << "Starting Producer threads" << endl;
 

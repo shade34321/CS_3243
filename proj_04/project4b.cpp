@@ -24,6 +24,8 @@ using namespace std;
 
 #define NUM_CHILD 4
 #define LIST_SIZE 10000
+#define PARENT
+#define CHILD
 
 pthread_mutex_t mem_lock;
 sem_t parent;
@@ -38,6 +40,7 @@ void printList();
 void selectionSort(int *, int);
 void merge(int *, int, int *, int, int *);
 void merge_sort(int *, int);
+void doWork(int, int);
 pid_t performFork(int, int);
 
 int main(){
@@ -51,8 +54,10 @@ int main(){
 	int status;
 
 	pthread_mutex_init(&mem_lock, NULL);
-	sem_init(&child, 1, 1);
-	sem_init(&parent, 1, 0);
+	sem_t *parent = sem_open(PARENT, O_CREAT, 0644, 0);
+	sem_t *child = sem_open(CHILD, O_CREAT, 0644, 4);
+	//sem_init(&child, 1, NUM_CHILD);
+	//sem_init(&parent, 1, 0);
 
 	if (importList()){
 		free(unsorted);
@@ -66,6 +71,18 @@ int main(){
 		start += size;
 	}
 
+	do{
+		cout << getpid() << " Parent waiting on semaphore" << endl;
+		sem_wait(parent);
+		cout << getpid() << "Waiting on lock" << endl;
+		pthread_mutex_lock(&mem_lock);
+		cout << getpid() << " parent got lock and performing merge sort" << endl;
+		merge_sort(unsorted, sorted_size);
+		pthread_mutex_unlock(&mem_lock);
+		cout << getpid() << " parent releasing lock" << endl;
+		sem_post(child);
+		cout << "Parent notifying children" << endl;
+	} while (sorted_size < 10000);
 
 	int current_children = NUM_CHILD;
 	while (current_children > 0) {
@@ -83,12 +100,16 @@ int main(){
 		}
 	}
 	
-	merge_sort(unsorted, LIST_SIZE);
+	//merge_sort(unsorted, LIST_SIZE);
 	printList();
 
 	pthread_mutex_destroy(&mem_lock);
-	sem_destroy(&child);
-	sem_destroy(&parent);
+	sem_close(child);
+	sem_close(parent);
+	sem_unlink(child);
+	sem_unlink(parent);
+	sem_destroy(child);
+	sem_destroy(parent);
 
 	return 0;
 }
@@ -134,35 +155,59 @@ pid_t performFork(int start, int size) {
 		return 1;
 	}
 	else if (pid == 0) { //Child process
-		int temp[10];
-
-		for (int i = start; i < (size / 10); i += 10){
-			cout << "Sorting first 10" << endl;
-			copy(&unsorted[i], &unsorted[(i + 10)], temp);
-			selectionSort(temp, 10);
-			cout << "Waiting on lock" << endl;
-			sem_wait(&child);
-			pthread_mutex_lock(&mem_lock);
-			copy(&temp[0], &temp[9], &sorted[(sorted_size)]);
-			//memcpy(&sorted[sorted_size], &temp[0], sizeof(int)* 10);
-			sorted_size += 10;
-			pthread_mutex_unlock(&mem_lock);
-			sem_post(&parent);
-		}
-
+		doWork(start, size);
 		exit(0);
 	}
 	else { //parent process
-		cout << "Parent waiting on lock" << endl;
-		sem_wait(&parent);
-		pthread_mutex_lock(&mem_lock);
-		cout << "Performing merge sort" << endl;
-		merge_sort(unsorted, sorted_size);
-		pthread_mutex_unlock(&mem_lock);
-		sem_post(&child);
+		/**
+		do{
+			cout << getpid() << " Parent waiting on semaphore" << endl;
+			sem_wait(&parent);
+			cout << getpid() << "Waiting on lock" << endl;
+			pthread_mutex_lock(&mem_lock);
+			cout << getpid() << " parent got lock and performing merge sort" << endl;
+			merge_sort(unsorted, sorted_size);
+			pthread_mutex_unlock(&mem_lock);
+			cout << getpid() << " parent releasing lock" << endl;
+			sem_post(&child);
+			cout << "Parent notifying children" << endl;
+		} while (sorted_size < 10000);
+		*/
 	}
 
 	return pid;
+}
+
+void doWork(int start, int size){
+	int temp[10];
+
+	sem_t *parent = sem_open(PARENT, 0);
+	sem_t *child = sem_open(CHILD, 0);
+	cout << getpid() << " start: " << start << endl << getpid() << " size: " << size << endl;
+	cout << getpid() << " has been forked!" << endl;
+	//sleep(10);
+	for (int i = start; i < size; i += 10){
+		cout << getpid() << " sorting 10" << endl;
+		copy(&unsorted[i], &unsorted[(i + 10)], temp);
+		selectionSort(temp, 10);
+		cout << getpid() << " Waiting on child semapohre" << endl;
+		sem_wait(child);
+		cout << getpid() << " Waiting on lock" << endl;
+		pthread_mutex_lock(&mem_lock);
+		cout << getpid() << " got lock" << endl;
+		copy(&temp[0], &temp[9], &sorted[(sorted_size)]);
+		//memcpy(&sorted[sorted_size], &temp[0], sizeof(int)* 10);
+		sorted_size += 10;
+		pthread_mutex_unlock(&mem_lock);
+		cout << getpid() << " released lock" << endl;
+		sem_post(parent);
+		cout << getpid() << " notified parent" << endl;
+	}
+
+	sem_close(child);
+	sem_close(parent);
+	sem_unlink(child);
+	sem_unlink(parent);
 }
 
 void merge(int *A, int a, int *B, int b, int *C) {
@@ -199,6 +244,7 @@ void merge(int *A, int a, int *B, int b, int *C) {
 }
 
 void merge_sort(int *A, int n) {
+	cout << "Doing merge sort" << endl;
 	int i;
 	int *A1, *A2;
 	int n1, n2;
@@ -231,7 +277,7 @@ void merge_sort(int *A, int n) {
 }
 
 void selectionSort(int *temp, int size) {
-	
+	cout << "Doing selection sort" << endl;
 	for (int x = 0; x < size; x++){
 		int minIndex = x;
 		for (int y = x; y < size; y++){
