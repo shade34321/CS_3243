@@ -91,14 +91,17 @@ int main(int argc, char* argv[]){
 	sem_init(&full, 0, 0);
 	sem_init(&empty, 0, 1000);
 
+	cout << "Starting Producer threads" << endl;
+
 	for (int i = 0; i < numProd; i++){
 		pthread_create(&prod[i], NULL, &producer, (void *)q);
 	}
 
 	sleep(2);
+	cout << "Starting Consumer threads" << endl;
 
 	for (int i = 0; i < numCons; i++){
-		pthread_create(&cons[i], NULL, &producer, (void *)q);
+		pthread_create(&cons[i], NULL, &consumer, (void *)q);
 	}
 
 	if (quit){
@@ -106,6 +109,14 @@ int main(int argc, char* argv[]){
 
 		done = 0;
 
+		for (int i = 0; i < numProd; i++) {
+			pthread_join(prod[i], &ret);
+		}
+
+		for (int i = 0; i < numProd; i++) {
+			pthread_join(cons[i], &ret);
+		}
+	} else {
 		for (int i = 0; i < numProd; i++) {
 			pthread_join(prod[i], &ret);
 		}
@@ -174,17 +185,24 @@ void printQ(queue *q){
 	node *temp = q->head;
 	
 	for (i = 0; i < q->size; i++) {
-		printf("%d->", temp->data);
-		temp = temp->next;
+		if (temp->next == NULL){
+			printf("%d", temp->data);
+			temp = temp->next;
+		} else {
+			printf("%d->", temp->data);
+			temp = temp->next;
+		}
 	}
 
 	printf("\n");
 }
 
 void * consumer(void *s){
+	printf("Consumer thread!\n");
 	queue *q = (queue *)s;
 	int i = 0;
 	do{
+		printf("Consumer thread checking locks!\n");
 		sem_wait(&full);
 		pthread_mutex_lock(&lock);
 		printf("------> [Process %d] consuming ", pthread_self());
