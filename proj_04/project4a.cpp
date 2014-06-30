@@ -12,7 +12,6 @@
 #include <iostream>
 #include <cmath>
 #include <sys/types.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <semaphore.h>
 #include <signal.h>

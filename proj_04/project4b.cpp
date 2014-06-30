@@ -18,19 +18,23 @@
 #include <signal.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 using namespace std;
 
 #define NUM_CHILD 4
 #define LIST_SIZE 10000
 
-pthread_mutex_t lock;
+pthread_mutex_t mem_lock;
+sem_t parent;
+sem_t child;
 
 int *unsorted;
 int *sorted;
+int sorted_size;
 
 int importList();
 void printList();
-void selectionSort(int, int);
+void selectionSort(int *, int);
 void merge(int *, int, int *, int, int *);
 void merge_sort(int *, int);
 pid_t performFork(int, int);
@@ -39,11 +43,15 @@ int main(){
 	pid_t children[NUM_CHILD], endID;
 	unsorted = (int *)malloc(sizeof(int)* LIST_SIZE);
 	sorted = (int *)malloc(sizeof(int)* LIST_SIZE);
+	sorted_size = 0;
+
 	int size = LIST_SIZE / NUM_CHILD;
 	int start = 0;
 	int status;
 
-	pthread_mutex_init(&lock, NULL);
+	pthread_mutex_init(&mem_lock, NULL);
+	sem_init(&child, 1, 1);
+	sem_init(&parent, 1, 0);
 
 	if (importList()){
 		free(unsorted);
@@ -77,7 +85,9 @@ int main(){
 	merge_sort(unsorted, LIST_SIZE);
 	printList();
 
-	pthread_mutex_destroy(&lock);
+	pthread_mutex_destroy(&mem_lock);
+	sem_destroy(&child);
+	sem_destroy(&parent);
 
 	return 0;
 }
@@ -123,12 +133,28 @@ pid_t performFork(int start, int size) {
 		return 1;
 	}
 	else if (pid == 0) { //Child process
-		selectionSort(start, size);
+		int temp[10];
+
+		for (int i = start; i < (size / 10); i += 10){
+			copy(&unsorted[i], &unsorted[(i + 10)], temp);
+			selectionSort(temp, 10);
+
+			sem_wait(&child);
+			pthread_mutex_lock(&mem_lock);
+			copy(&temp[0], &temp[9], sorted[(sorted_size)]);
+			sorted_size += 10;
+			pthread_mutex_unlock(&mem_lock);
+			sem_post(&parent);
+		}
+
 		exit(0);
 	}
 	else { //parent process
-		//We handle the parent's busy work in main
-		//If we did it here then the parent would be doing busy work with one child on 4 seperate occasions and not with 4 children at once.
+		sem_wait(&parent);
+		pthread_mutex_lock(&mem_lock);
+		merge_sort(unsorted, sorted_size);
+		pthread_mutex_unlock(&mem_lock);
+		sem_post(&child);
 	}
 
 	return pid;
@@ -199,19 +225,18 @@ void merge_sort(int *A, int n) {
 	free(A2);
 }
 
-void selectionSort(int start, int size) {
-	int last = (start + size)-1;
-
-	for (int x = start; x < last; x++){
+void selectionSort(int *temp, int size) {
+	
+	for (int x = 0; x < size; x++){
 		int minIndex = x;
-		for (int y = x; y < last; y++){
-			if (unsorted[minIndex] > unsorted[y])
+		for (int y = x; y < size; y++){
+			if (temp[minIndex] > temp[y])
 			{
 				minIndex = y;
 			}
 		}
-		int temp = unsorted[x];
-		unsorted[x] = unsorted[minIndex];
-		unsorted[minIndex] = temp; 
+		int t = temp[x];
+		temp[x] = temp[minIndex];
+		temp[minIndex] = t; 
 	}
 }
