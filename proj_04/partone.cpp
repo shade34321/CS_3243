@@ -48,16 +48,25 @@ void * consumer(void *);
 void emptyQ(queue *);
 
 int main(int argc, char* argv[]){
-	if (argc != 4){
+	if (argc != 4 && argc != 5){
+		cerr << "You supplied " << argc << " arguments and we need 5" << endl;
 		cerr << "Incorrect Usage!" << endl;
 		cerr << "You need to supply the number of producer threads, consumer threads, and how long to sleep for like so" << endl;
-		cerr << "./partone numProducers numConsumers secondsToSleep" << endl;
+		cerr << "You can also supply how long you want the main thread to sleep before exiting by adding a number to the end" << endl;
+		cerr << "./partone numProducers numConsumers secondsToSleep mainSleep" << endl;		
 		exit(1);
 	}
 
-	int numProd = atoi(argv[0]);
-	int numCons = atoi(argv[1]);
-	int ssleep = atoi(argv[2]);
+	int numProd = atoi(argv[1]);
+	int numCons = atoi(argv[2]);
+	int ssleep = atoi(argv[3]);
+	int msleep = atoi(argv[3]);
+	int quit;
+
+	if (argc == 5){
+		msleep = atoi(argv[4]);
+		quit = 1;
+	}
 
 	done = 1; //condition variable to quit
 
@@ -92,16 +101,18 @@ int main(int argc, char* argv[]){
 		pthread_create(&cons[i], NULL, &producer, (void *)q);
 	}
 
-	sleep(((numProd * ssleep) + (numCons * ssleep)));
-	
-	done = 0;
+	if (quit){
+		sleep(msleep);
 
-	for (int i = 0; i < numProd; i++) {
-		pthread_join(prod[i], &ret);
-	}
-	
-	for (int i = 0; i < numProd; i++) {
-		pthread_join(cons[i], &ret);
+		done = 0;
+
+		for (int i = 0; i < numProd; i++) {
+			pthread_join(prod[i], &ret);
+		}
+
+		for (int i = 0; i < numProd; i++) {
+			pthread_join(cons[i], &ret);
+		}
 	}
 
 	printQ(q);
