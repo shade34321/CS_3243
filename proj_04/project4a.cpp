@@ -202,7 +202,6 @@ void * consumer(void *s){
 	queue *q = (queue *)s;
 	int i = 0;
 	do{
-		printf("Consumer thread checking locks!\n");
 		sem_wait(&full);
 		pthread_mutex_lock(&lock);
 		printf("------> [Process %d] consuming ", pthread_self());
