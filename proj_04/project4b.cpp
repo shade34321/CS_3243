@@ -19,6 +19,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <string.h>
 using namespace std;
 
 #define NUM_CHILD 4
@@ -136,12 +137,14 @@ pid_t performFork(int start, int size) {
 		int temp[10];
 
 		for (int i = start; i < (size / 10); i += 10){
+			cout << "Sorting first 10" << endl;
 			copy(&unsorted[i], &unsorted[(i + 10)], temp);
 			selectionSort(temp, 10);
-
+			cout << "Waiting on lock" << endl;
 			sem_wait(&child);
 			pthread_mutex_lock(&mem_lock);
-			copy(&temp[0], &temp[9], sorted[(sorted_size)]);
+			copy(&temp[0], &temp[9], &sorted[(sorted_size)]);
+			//memcpy(&sorted[sorted_size], &temp[0], sizeof(int)* 10);
 			sorted_size += 10;
 			pthread_mutex_unlock(&mem_lock);
 			sem_post(&parent);
@@ -150,8 +153,10 @@ pid_t performFork(int start, int size) {
 		exit(0);
 	}
 	else { //parent process
+		cout << "Parent waiting on lock" << endl;
 		sem_wait(&parent);
 		pthread_mutex_lock(&mem_lock);
+		cout << "Performing merge sort" << endl;
 		merge_sort(unsorted, sorted_size);
 		pthread_mutex_unlock(&mem_lock);
 		sem_post(&child);
