@@ -174,8 +174,13 @@ void printQ(queue *q){
 	node *temp = q->head;
 	
 	for (i = 0; i < q->size; i++) {
-		printf("%d->", temp->data);
-		temp = temp->next;
+		if (temp->next == NULL){
+			printf("%d", temp->data);
+			temp = temp->next;
+		} else {
+			printf("%d->", temp->data);
+			temp = temp->next;
+		}
 	}
 
 	printf("\n");
