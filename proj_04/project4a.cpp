@@ -34,7 +34,7 @@ struct queue{
 	int sleep;
 };
 
-pthread_mutex_t lock;
+pthread_mutex_t lockMem;
 sem_t full;
 sem_t empty;
 int done;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]){
 	q->head = NULL;
 	q->tail = NULL;
 
-	pthread_mutex_init(&lock, NULL);
+	pthread_mutex_init(&lockMem, NULL);
 	sem_init(&full, 0, 0);
 	sem_init(&empty, 0, 1000);
 
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]){
 
 	printQ(q);
 
-	pthread_mutex_destroy(&lock);
+	pthread_mutex_destroy(&lockMem);
 	sem_destroy(&full);
 	sem_destroy(&empty);
 	emptyQ(q);
@@ -203,10 +203,10 @@ void * consumer(void *s){
 	int i = 0;
 	do{
 		sem_wait(&full);
-		pthread_mutex_lock(&lock);
+		pthread_mutex_lock(&lockMem);
 		printf("------> [Process %d] consuming ", pthread_self());
 		pop(q);
-		pthread_mutex_unlock(&lock);
+		pthread_mutex_unlock(&lockMem);
 		sem_post(&empty);
 		//if ((rand() % 10 + 1) % 2 == 0) {
 			sleep(q->sleep);
@@ -222,10 +222,10 @@ void * producer(void *s){
 	do {
 		int num = (rand() % 200 + 1);
 		sem_wait(&empty);
-		pthread_mutex_lock(&lock);
+		pthread_mutex_lock(&lockMem);
 		printf("[Process %d] producing ", pthread_self());
 		push(q, num);
-		pthread_mutex_unlock(&lock);
+		pthread_mutex_unlock(&lockMem);
 		sem_post(&full);
 		//if ((rand() % 10 + 1) % 2 == 1) {
 			sleep(q->sleep);
