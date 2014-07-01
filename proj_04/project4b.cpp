@@ -214,7 +214,7 @@ void childWork(int start, int size){
 	cout << getpid() << " start: " << start << endl << getpid() << " size: " << size << endl;
 	cout << getpid() << " has been forked!" << endl;
 	//sleep(10);
-	for (int i = start; i < size; i += 10){
+	for (int i = start; i < (start+size); i += 10){
 		cout << getpid() << " sorting 10" << endl;
 		copy(&unsorted[i], &unsorted[(i + 10)], temp);
 		selectionSort(temp, 10);
