@@ -122,6 +122,7 @@ void parentWork(){
 		cout << getpid() << "Waiting on lock" << endl;
 		pthread_mutex_lock(&mem_lock);
 		cout << getpid() << " parent got lock and performing merge sort" << endl;
+		sorted_size += 10;
 		merge_sort(unsorted, sorted_size);
 		pthread_mutex_unlock(&mem_lock);
 		cout << getpid() << " parent releasing lock" << endl;
