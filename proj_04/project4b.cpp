@@ -82,10 +82,10 @@ int main(){
 		start += size;
 	}
 
+	parentWork();
+
 	int current_children = NUM_CHILD;
 	while (current_children > 0) {
-		parentWork();
-
 		for (int i = 0; i < NUM_CHILD; i++) {
 			endID = waitpid(children[i], &status, WNOHANG | WUNTRACED);
 
