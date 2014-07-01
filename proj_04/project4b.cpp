@@ -116,6 +116,7 @@ int main(){
 
 void parentWork(){
 	do{
+		cout << "sorted size is " << sorted_size << endl;
 		cout << getpid() << " Parent waiting on semaphore" << endl;
 		sem_wait(parent);
 		cout << getpid() << "Waiting on lock" << endl;
