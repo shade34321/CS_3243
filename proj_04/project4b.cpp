@@ -20,16 +20,17 @@
 #include <fstream>
 #include <algorithm>
 #include <string.h>
+#include <fcntl.h>
 using namespace std;
 
 #define NUM_CHILD 4
 #define LIST_SIZE 10000
-#define PARENT
-#define CHILD
+#define PARENT "p"
+#define CHILD "c"
 
 pthread_mutex_t mem_lock;
-sem_t parent;
-sem_t child;
+sem_t *parent;
+sem_t *child;
 
 int *unsorted;
 int *sorted;
@@ -40,7 +41,8 @@ void printList();
 void selectionSort(int *, int);
 void merge(int *, int, int *, int, int *);
 void merge_sort(int *, int);
-void doWork(int, int);
+void childWork(int, int);
+void parentWork();
 pid_t performFork(int, int);
 
 int main(){
@@ -54,8 +56,17 @@ int main(){
 	int status;
 
 	pthread_mutex_init(&mem_lock, NULL);
-	sem_t *parent = sem_open(PARENT, O_CREAT, 0644, 0);
-	sem_t *child = sem_open(CHILD, O_CREAT, 0644, 4);
+	parent = sem_open(PARENT, O_CREAT, 0644, 0);
+	if (parent == SEM_FAILED){
+		cerr << "Parent semaphore failed to open" << endl;
+		exit(1);
+	}
+
+	child = sem_open(CHILD, O_CREAT, 0644, 4);
+	if (child == SEM_FAILED){
+		cerr << "Child semaphore failed to open" << endl;
+		exit(1);
+	}
 	//sem_init(&child, 1, NUM_CHILD);
 	//sem_init(&parent, 1, 0);
 
@@ -71,21 +82,10 @@ int main(){
 		start += size;
 	}
 
-	do{
-		cout << getpid() << " Parent waiting on semaphore" << endl;
-		sem_wait(parent);
-		cout << getpid() << "Waiting on lock" << endl;
-		pthread_mutex_lock(&mem_lock);
-		cout << getpid() << " parent got lock and performing merge sort" << endl;
-		merge_sort(unsorted, sorted_size);
-		pthread_mutex_unlock(&mem_lock);
-		cout << getpid() << " parent releasing lock" << endl;
-		sem_post(child);
-		cout << "Parent notifying children" << endl;
-	} while (sorted_size < 10000);
-
 	int current_children = NUM_CHILD;
 	while (current_children > 0) {
+		parentWork();
+
 		for (int i = 0; i < NUM_CHILD; i++) {
 			endID = waitpid(children[i], &status, WNOHANG | WUNTRACED);
 
@@ -106,12 +106,27 @@ int main(){
 	pthread_mutex_destroy(&mem_lock);
 	sem_close(child);
 	sem_close(parent);
-	sem_unlink(child);
-	sem_unlink(parent);
+	sem_unlink(CHILD);
+	sem_unlink(PARENT);
 	sem_destroy(child);
 	sem_destroy(parent);
 
 	return 0;
+}
+
+void parentWork(){
+	do{
+		cout << getpid() << " Parent waiting on semaphore" << endl;
+		sem_wait(parent);
+		cout << getpid() << "Waiting on lock" << endl;
+		pthread_mutex_lock(&mem_lock);
+		cout << getpid() << " parent got lock and performing merge sort" << endl;
+		merge_sort(unsorted, sorted_size);
+		pthread_mutex_unlock(&mem_lock);
+		cout << getpid() << " parent releasing lock" << endl;
+		sem_post(child);
+		cout << "Parent notifying children" << endl;
+	} while (sorted_size < 10000);
 }
 
 void printList(){
@@ -155,7 +170,8 @@ pid_t performFork(int start, int size) {
 		return 1;
 	}
 	else if (pid == 0) { //Child process
-		doWork(start, size);
+		childWork(start, size);
+		cout << getpid() << " about to exit!" << endl;
 		exit(0);
 	}
 	else { //parent process
@@ -178,11 +194,21 @@ pid_t performFork(int start, int size) {
 	return pid;
 }
 
-void doWork(int start, int size){
+void childWork(int start, int size){
 	int temp[10];
 
-	sem_t *parent = sem_open(PARENT, 0);
-	sem_t *child = sem_open(CHILD, 0);
+	sem_t *parent = sem_open(PARENT, O_CREAT, 0644, 0);
+	if (parent == SEM_FAILED){
+		cerr << "Parent semaphore failed to open" << endl;
+		exit(1);
+	}
+
+	sem_t *child = sem_open(CHILD, O_CREAT, 0644, 4);
+	if (child == SEM_FAILED){
+		cerr << "Child semaphore failed to open" << endl;
+		exit(1);
+	}
+
 	cout << getpid() << " start: " << start << endl << getpid() << " size: " << size << endl;
 	cout << getpid() << " has been forked!" << endl;
 	//sleep(10);
@@ -204,10 +230,12 @@ void doWork(int start, int size){
 		cout << getpid() << " notified parent" << endl;
 	}
 
+	cout << getpid() << " child done and returning back to the parent!" << endl;
+
 	sem_close(child);
 	sem_close(parent);
-	sem_unlink(child);
-	sem_unlink(parent);
+	sem_unlink(CHILD);
+	sem_unlink(PARENT);
 }
 
 void merge(int *A, int a, int *B, int b, int *C) {
