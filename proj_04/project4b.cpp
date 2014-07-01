@@ -38,6 +38,7 @@ int sorted_size;
 
 int importList();
 void printList();
+void writeToFile();
 void selectionSort(int *, int);
 void merge(int *, int, int *, int, int *);
 void merge_sort(int *, int);
@@ -102,6 +103,7 @@ int main(){
 	
 	//merge_sort(unsorted, LIST_SIZE);
 	printList();
+	writeToFile();
 
 	pthread_mutex_destroy(&mem_lock);
 	sem_close(child);
@@ -116,18 +118,18 @@ int main(){
 
 void parentWork(){
 	do{
-		cout << "sorted size is " << sorted_size << endl;
-		cout << getpid() << " Parent waiting on semaphore" << endl;
+		//cout << "sorted size is " << sorted_size << endl;
+		//cout << getpid() << " Parent waiting on semaphore" << endl;
 		sem_wait(parent);
-		cout << getpid() << "Waiting on lock" << endl;
+		//cout << getpid() << "Waiting on lock" << endl;
 		pthread_mutex_lock(&mem_lock);
-		cout << getpid() << " parent got lock and performing merge sort" << endl;
+		//cout << getpid() << " parent got lock and performing merge sort" << endl;
 		sorted_size += 10;
 		merge_sort(unsorted, sorted_size);
 		pthread_mutex_unlock(&mem_lock);
-		cout << getpid() << " parent releasing lock" << endl;
+		//cout << getpid() << " parent releasing lock" << endl;
 		sem_post(child);
-		cout << "Parent notifying children" << endl;
+		//cout << "Parent notifying children" << endl;
 	} while (sorted_size < 10000);
 }
 
@@ -135,6 +137,18 @@ void printList(){
 	for (int i = 0; i < LIST_SIZE; i++){
 		cout << unsorted[i] << endl;
 	}
+}
+
+void writeToFile(){
+	ofstream file;
+	file.open("sorted.txt");
+	if (file.is_open()){
+		for (int i = 0; i < LIST_SIZE; i++){
+			file << unsorted[i] << endl;
+		}
+	}
+
+	file.close();
 }
 
 int importList(){
@@ -173,7 +187,7 @@ pid_t performFork(int start, int size) {
 	}
 	else if (pid == 0) { //Child process
 		childWork(start, size);
-		cout << getpid() << " about to exit!" << endl;
+		//cout << getpid() << " about to exit!" << endl;
 		exit(0);
 	}
 	else { //parent process
@@ -211,28 +225,28 @@ void childWork(int start, int size){
 		exit(1);
 	}
 
-	cout << getpid() << " start: " << start << endl << getpid() << " size: " << size << endl;
-	cout << getpid() << " has been forked!" << endl;
+	//cout << getpid() << " start: " << start << endl << getpid() << " size: " << size << endl;
+	//cout << getpid() << " has been forked!" << endl;
 	//sleep(10);
 	for (int i = start; i < (start+size); i += 10){
 		cout << getpid() << " sorting 10" << endl;
 		copy(&unsorted[i], &unsorted[(i + 10)], temp);
 		selectionSort(temp, 10);
-		cout << getpid() << " Waiting on child semapohre" << endl;
+		//cout << getpid() << " Waiting on child semapohre" << endl;
 		sem_wait(child);
-		cout << getpid() << " Waiting on lock" << endl;
+		//cout << getpid() << " Waiting on lock" << endl;
 		pthread_mutex_lock(&mem_lock);
 		cout << getpid() << " got lock" << endl;
 		copy(&temp[0], &temp[9], &sorted[(sorted_size)]);
 		//memcpy(&sorted[sorted_size], &temp[0], sizeof(int)* 10);
 		sorted_size += 10;
 		pthread_mutex_unlock(&mem_lock);
-		cout << getpid() << " released lock" << endl;
+		//cout << getpid() << " released lock" << endl;
 		sem_post(parent);
-		cout << getpid() << " notified parent" << endl;
+		//cout << getpid() << " notified parent" << endl;
 	}
 
-	cout << getpid() << " child done and returning back to the parent!" << endl;
+	//cout << getpid() << " child done and returning back to the parent!" << endl;
 
 	sem_close(child);
 	sem_close(parent);
@@ -274,7 +288,7 @@ void merge(int *A, int a, int *B, int b, int *C) {
 }
 
 void merge_sort(int *A, int n) {
-	cout << "Doing merge sort" << endl;
+	//cout << "Doing merge sort" << endl;
 	int i;
 	int *A1, *A2;
 	int n1, n2;
@@ -307,7 +321,7 @@ void merge_sort(int *A, int n) {
 }
 
 void selectionSort(int *temp, int size) {
-	cout << "Doing selection sort" << endl;
+	//cout << "Doing selection sort" << endl;
 	for (int x = 0; x < size; x++){
 		int minIndex = x;
 		for (int y = x; y < size; y++){
