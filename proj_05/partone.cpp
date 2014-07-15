@@ -12,13 +12,13 @@
 
 using namespace std;
 
-#define MAX_PROCESSES			60 // This will not ever change
+#define MAX_PROCESSES			61 // This will not ever change
 #define PROCESS_COUNT			60 // useful when debugging to limit # of procs
 #define MIN_BURST				10
 #define MAX_BURST				200
-#define MIN_MEMORY_PER_PROC		10
-#define MAX_MEMORY_PER_PROC		250
-#define MAX_MEMORY				1040
+#define MIN_MEMORY_PER_PROC		4
+#define MAX_MEMORY_PER_PROC		160
+#define MAX_MEMORY              1040
 #define MAX_BLOCK_PROC_RATIO	0.5
 #define ENABLE_COMPACTION		1 // Boolean flag for whether compaction is on/off
 #define PRINT_INTERVAL			500 // # of cpu quanta between memory map printouts
@@ -29,18 +29,26 @@ using namespace std;
 struct process{
 	int memorySize;			//Size of memory in bytes for the process
 	int memStart;			//Memory Start location
-	char pid;				//character to denote the process.
+	int pid;				//PID of the process
+	char processID;			//character to denote the process.
 	int burstTime;			//Burst time for process
 	int state;				//State the process is in
 };
 
 struct processMap{
-	char memory[MAX_MEMORY];			//Total bytes of memory
+	process *memory[MAX_MEMORY];			//Total bytes of memory
 	process processes[MAX_PROCESSES];		//array of process we can have.
 	int numProcess;
 	int memUsed;
 	int currentQuanta;
+};
 
+struct back_store{
+	process *bs[MAX_MEMORY];
+	int capacity;
+	int size;
+	int head;
+	int tail;
 };
 
 enum p_State {
@@ -49,12 +57,73 @@ enum p_State {
 	IDLE = 2
 };
 
-void createProcess();
+processMap pMap;
+back_store backStore;
+
+void initProcesses();
+void createProcess(int, int);
+void printProcess();
 void printMemoryMap(processMap *);
 
 int main(){
 	srand(time(NULL));	//seeding for random numbers
 
+	initProcesses();
+	printProcess();
+}
+
+void initProcesses(){
+	int i;
+	int j = 1;
+
+	createProcess(0, 64); //create root process
+
+	for (i = 48; i < 58; i++){
+		createProcess(j, i);
+		j++;
+	}
+
+	for (i = 65; i < 91; i++){
+		if (i != 73){
+			createProcess(j, i);
+			j++;
+		}
+	}
+
+	for (i = 97; i < 123; i++){
+		if (i != 108){
+			createProcess(j, i);
+			j++;
+		}
+	}
+}
+
+void createProcess(int location, int processID){
+	int memSize;
+	int burst;
+
+	if (processID == 64){
+		memSize = 120;
+		burst = -1;
+	}
+	else {
+		memSize = rand() % MAX_MEMORY_PER_PROC + MIN_MEMORY_PER_PROC;
+		burst = rand() % MAX_BURST + MIN_BURST;
+	}
+
+	pMap.processes[location].memorySize = memSize;
+	pMap.processes[location].memStart = 0;
+	pMap.processes[location].pid = location;
+	pMap.processes[location].processID = (char)processID;
+	pMap.processes[location].burstTime = burst;
+	pMap.processes[location].state = IDLE;
+}
+
+void printProcess(){
+	cout << "ProcessID" << setw(10) << "PID" << " Memory Size" << " Memory Start" << " Burst Time" << " State" << endl;
+	for (int i = 0; i < MAX_PROCESSES; i++){
+		cout << pMap.processes[i].processID << setw(10) << pMap.processes[i].pid << setw(10) << pMap.processes[i].memorySize << setw(10) << pMap.processes[i].memStart << setw(10) << pMap.processes[i].burstTime << setw(10) << pMap.processes[i].state << endl;
+	}
 }
 
 void printMemoryMap(processMap *pMap){
