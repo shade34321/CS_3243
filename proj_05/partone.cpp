@@ -51,6 +51,14 @@ struct back_store{
 	int tail;
 };
 
+struct hole{
+	int start;
+	int size;
+	hole *parent;
+	hole *left;
+	hole *right;
+};
+
 enum p_State {
 	WAITING = 0,
 	RUNNING = 1,
