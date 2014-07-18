@@ -227,11 +227,13 @@ bool firstFit(process *p){
 	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
 		temp = &pMap.processes[pMap.memory[i]];
 		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
+			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
 			putInBackStore(i, NULL);
 			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
 			putInMemory(i, NULL);
 			return true;
 		} else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
+			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
 			putInBackStore(i, NULL);
 			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
 			putInMemory(i, p);
