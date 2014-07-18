@@ -102,14 +102,14 @@ int main(){
 
 	initProcesses();
 	//printProcess();
-	printMemory();
+	//printMemory();
 	
 	putInMemory(0, &pMap.processes[0]);
 	putInMemory(120, &pMap.processes[1]);
 	putInMemory(400, &pMap.processes[5]);
 	
-	cout << (char)pMap.processes[1].processID << " memory size is " << pMap.processes[1].memorySize << endl;
-	cout << (char)pMap.processes[5].processID << " memory size is " << pMap.processes[5].memorySize << endl;
+	//cout << (char)pMap.processes[1].processID << " memory size is " << pMap.processes[1].memorySize << endl;
+	//cout << (char)pMap.processes[5].processID << " memory size is " << pMap.processes[5].memorySize << endl;
 	//cout << (char)pMap.processes[1035].processID << " memory size is " << pMap.processes[1035].memorySize << endl;
 	//cout << (char)pMap.processes[1036].processID << " memory size is " << pMap.processes[1036].memorySize << endl;
 
@@ -119,9 +119,9 @@ int main(){
 	//cout << (char)pMap.processes[2].processID << " memory size is " << pMap.processes[2].memorySize << endl;
 	//cout << (char)pMap.processes[4].processID << " memory size is " << pMap.processes[4].memorySize << endl;
 
-	printMemory();
+	//printMemory();
 	//printBackStore();
-	//printMemoryMap();
+	printMemoryMap();
 }
 
 int getburstTime(){
@@ -162,15 +162,13 @@ bool putInMemory(int start, process *p){
 			backStore.bs[backStore.head] = -1;
 			backStore.head = (backStore.head + 1) % backStore.capacity;
 		}
-	}
 
-	if (pMap.processes[backStore.bs[backStore.head]].processID != 64) {
 		pMap.numProcess++;
 	}
 
-	pMap.memUsed += pMap.processes[backStore.bs[backStore.head]].memorySize;
-	pMap.processes[backStore.bs[backStore.head]].memStart = start;
-	pMap.processes[backStore.bs[backStore.head]].state = RUNNING;
+	pMap.memUsed += pMap.processes[pMap.memory[start]].memorySize;
+	pMap.processes[pMap.memory[start]].memStart = start;
+	pMap.processes[pMap.memory[start]].state = RUNNING;
 
 	return true;
 }
@@ -327,6 +325,10 @@ void printMemoryMap(){
 		}
 
 		for (int j = i; j < (i+80); j++){ //For the top numbers
+			if (j > 1039){
+				cout << "EXCEEDED ARRAY LIMITATION" << j << endl;
+				return;
+			}
 			//print process ID;
 			if (pMap.memory[j] != -1){
 				sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);

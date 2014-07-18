@@ -106,12 +106,14 @@ int main(){
 	
 	putInMemory(0, &pMap.processes[0]);
 	putInMemory(120, &pMap.processes[1]);
+	putInMemory(400, &pMap.processes[5]);
 
 	putInBackStore(0, &pMap.processes[2]);
-	putInBackStore(240, &pMap.processes[4]);
+	//putInBackStore(240, &pMap.processes[4]);
+	putInBackStore(400, NULL);
 	//printMemory();
 	printBackStore();
-	printMemoryMap();
+	//printMemoryMap();
 }
 
 int getburstTime(){
@@ -131,9 +133,9 @@ bool putInBackStore(int start, process *p){
 		pMap.processes[pMap.memory[start]].memStart = backStore.tail;
 		pMap.processes[pMap.memory[start]].state = IDLE;
 
-		for (int i = 0; i < pMap.processes[start].memorySize; i++){
+		for (int i = 0; i < pMap.processes[pMap.memory[start]].memorySize; i++){
 			backStore.bs[backStore.tail] = pMap.memory[start + i]; //copy the memory over
-			pMap.memory[start + i] = -1; //set the memory as free
+			pMap.memory[pMap.memory[start] + i] = -1; //set the memory as free
 			backStore.tail = (backStore.tail + 1) % backStore.capacity; //set the new tail
 		}
 	}
@@ -141,26 +143,25 @@ bool putInBackStore(int start, process *p){
 	return true;
 }
 
-bool putInMemory(int start, process *p){	
+bool putInMemory(int start, process *p){
 	if (p){ //process is just starting and is not in the back store
 		for (int i = 0; i < p->memorySize; i++){
-			pMap.memory[start+i] = p->pid;
+			pMap.memory[start + i] = p->pid;
 		}
-	} else { //pull it from the back store		
+	}
+	else { //pull it from the back store		
 		for (int i = 0; i < pMap.processes[backStore.bs[backStore.head]].memorySize; i++){
 			pMap.memory[start + i] = pMap.processes[backStore.bs[backStore.head]].pid;
 			backStore.bs[backStore.head] = -1;
 			backStore.head = (backStore.head + 1) % backStore.capacity;
 		}
-	}
 
-	if (pMap.processes[backStore.bs[backStore.head]].processID != 64) {
 		pMap.numProcess++;
 	}
 
-	pMap.memUsed += pMap.processes[backStore.bs[backStore.head]].memorySize;
-	pMap.processes[backStore.bs[backStore.head]].memStart = start;
-	pMap.processes[backStore.bs[backStore.head]].state = RUNNING;
+	pMap.memUsed += pMap.processes[pMap.memory[start]].memorySize;
+	pMap.processes[pMap.memory[start]].memStart = start;
+	pMap.processes[pMap.memory[start]].state = RUNNING;
 
 	return true;
 }
@@ -217,22 +218,49 @@ void printMemory(){
 	bool test = true;
 	memset(output, 0, 80);
 
-	for (int j = 0; j < MAX_MEMORY; j++){ //For the top numbers
-		//print process ID;
-		if (pMap.memory[j] != -1){
-			sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
-		}
-		else {
-			sprintf(output, " ");
+	printf("Memory Map\n");
+	printf("%s\n", string(80, '=').c_str());
+
+	for (int i = 0; i < MAX_MEMORY; i += 80){
+
+		for (int j = (i + 9); j < (i + 80); j += 10){ //For the top numbers
+			sprintf(output, "%d", j);
+			if ((j + 1) % 80 == 0){
+				printf("%10s\n", output);
+			}
+			else {
+				printf("%10s", output);
+			}
 		}
 
-		if ((j + 1) % 80 == 0){
-			printf("%s\n", output);
+		for (int j = 0; j < 8; j++){
+			if ((j + 1) % 8 == 0){
+				printf("----+----|\n");
+			}
+			else {
+				printf("----+----|");
+			}
 		}
-		else {
-			printf("%s", output);
+
+		for (int j = i; j < (i + 80); j++){ //For the top numbers
+			//print process ID;
+			if (pMap.memory[j] != -1){
+				sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
+			}
+			else {
+				sprintf(output, " ");
+			}
+
+			if ((j + 1) % 80 == 0){
+				printf("%s\n", output);
+			}
+			else {
+				printf("%s", output);
+			}
 		}
 	}
+
+	printf("%s\n", string(80, '=').c_str());
 }
 
 void printBackStore(){
@@ -240,22 +268,49 @@ void printBackStore(){
 	bool test = true;
 	memset(output, 0, 80);
 
-	for (int j = 0; j < MAX_MEMORY; j++){ //For the top numbers
-		//print process ID;
-		if (backStore.bs[j] != -1){
-			sprintf(output, "%c", (char)pMap.processes[backStore.bs[j]].processID);
-		}
-		else {
-			sprintf(output, " ");
+	printf("Map of Backstore\n");
+	printf("%s\n", string(80, '=').c_str());
+
+	for (int i = 0; i < MAX_MEMORY; i += 80){
+
+		for (int j = (i + 9); j < (i + 80); j += 10){ //For the top numbers
+			sprintf(output, "%d", j);
+			if ((j + 1) % 80 == 0){
+				printf("%10s\n", output);
+			}
+			else {
+				printf("%10s", output);
+			}
 		}
 
-		if ((j + 1) % 80 == 0){
-			printf("%s\n", output);
+		for (int j = 0; j < 8; j++){
+			if ((j + 1) % 8 == 0){
+				printf("----+----|\n");
+			}
+			else {
+				printf("----+----|");
+			}
 		}
-		else {
-			printf("%s", output);
+
+		for (int j = i; j < (i + 80); j++){ //For the top numbers
+			//print process ID;
+			if (backStore.bs[j] != -1){
+				sprintf(output, "%c", (char)pMap.processes[backStore.bs[j]].processID);
+			}
+			else {
+				sprintf(output, " ");
+			}
+
+			if ((j + 1) % 80 == 0){
+				printf("%s\n", output);
+			}
+			else {
+				printf("%s", output);
+			}
 		}
 	}
+
+	printf("%s\n", string(80, '=').c_str());
 }
 
 void printProcess(){
