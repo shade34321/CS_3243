@@ -86,6 +86,7 @@ bool putInMemory(int, process *);
 bool putInBackStore(int, process *);
 void findHoles();
 void printHoles();
+bool firstFit(process *p);
 int getburstTime();
 
 int main(){
@@ -129,28 +130,42 @@ int main(){
 	printf("backstore: tail %d\n", backStore.tail);
 	*/
 	putInBackStore(0, &pMap.processes[4]);
-	printBackStore();
-	printMemory();
+	//printBackStore();
+	//printMemory();
 
-	printf("Inserted process 4 into the backstore\n");
-	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
-	printf("backstore: tail %d\n", backStore.tail);
+	//printf("Inserted process 4 into the backstore\n");
+	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
+	//printf("backstore: tail %d\n", backStore.tail);
 	putInBackStore(400, NULL);
-	printMemory();
-	printBackStore();
+	//printMemory();
+	//printBackStore();
 
-	findHoles();
-	printHoles();
+	//findHoles();
+	//printHoles();
 
-	printf("Pulling from backstore\n");
-	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memStart, pMap.processes[backStore.bs[backStore.head]].memorySize);
-	printf("backstore head: %d\n", backStore.head);
+	//printf("Pulling from backstore\n");
+	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memStart, pMap.processes[backStore.bs[backStore.head]].memorySize);
+	//printf("backstore head: %d\n", backStore.head);
 	putInMemory(300, NULL);
+	//printMemory();
+	//printBackStore();
+	//printf("backstore head: %d\n", backStore.head);
+	//findHoles();
+	//printHoles();
+
+	printf("Inserted process %d into the backstore\n", pMap.processes[48]);
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[48].processID, pMap.processes[48].memStart, pMap.processes[48].memorySize);
 	printMemory();
 	printBackStore();
-	printf("backstore head: %d\n", backStore.head);
-	findHoles();
-	printHoles();
+	firstFit(&pMap.processes[48]);
+	printMemory();
+	printBackStore();
+
+	printMemory();
+	printBackStore();
+	firstFit(NULL);
+	printMemory();
+	printBackStore();
 
 	//printMemoryMap();
 }
@@ -160,7 +175,7 @@ int getburstTime(){
 }
 
 void findHoles(){
-	int i, j = bs.head;
+	int i, j = backStore.head;
 	hole *h = (hole *)malloc(sizeof(hole));
 	holes.clear();
 
@@ -190,19 +205,39 @@ void printHoles(){
 }
 
 bool firstFit(process *p){
+	process *temp;
 	findHoles(); //Get updated list of holes
+	printHoles();
+
+	//Do we have a hole big enough?
 	for (int i = 0; i < holes.size(); i++){
 		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
+			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
 			putInMemory(holes.at(i).start, NULL);
 			return true;
 		}
 		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
+			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
 			putInMemory(holes.at(i).start, p);
 			return true;
 		}
 	}
 
 	//check for IDLE Processes next
+	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
+		temp = &pMap.processes[pMap.memory[i]];
+		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
+			putInBackStore(i, NULL);
+			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
+			putInMemory(i, NULL);
+			return true;
+		} else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
+			putInBackStore(i, NULL);
+			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
+			putInMemory(i, p);
+			return true;
+		}
+	}
 
 	return false;
 }
