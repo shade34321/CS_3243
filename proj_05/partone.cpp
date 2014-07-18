@@ -160,16 +160,14 @@ int getburstTime(){
 }
 
 void findHoles(){
-	int i, j = 0;
+	int i, j = bs.head;
 	hole *h = (hole *)malloc(sizeof(hole));
 	holes.clear();
 
 	h->size = 0;
 
-	printf("Inside findHoles\n");
-
 	for (i = 0; i < MAX_MEMORY; i++){
-		if (pMap.memory[i] == -1){
+		if (pMap.memory[((j+i)%MAX_MEMORY)] == -1){ //should handle wrapping holes - need to test
 			h->start = i;
 			while (pMap.memory[i] == -1){
 				h->size++;
@@ -189,6 +187,24 @@ void printHoles(){
 			printf("Hole: %d\tstart: %d\tsize: %d\n", i, holes.at(i).start, holes.at(i).size);
 		}
 	}
+}
+
+bool firstFit(process *p){
+	findHoles(); //Get updated list of holes
+	for (int i = 0; i < holes.size(); i++){
+		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
+			putInMemory(holes.at(i).start, NULL);
+			return true;
+		}
+		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
+			putInMemory(holes.at(i).start, p);
+			return true;
+		}
+	}
+
+	//check for IDLE Processes next
+
+	return false;
 }
 
 bool putInBackStore(int start, process *p){
