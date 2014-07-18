@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string.h>
-
+#include <iomanip>
 using namespace std;
 
 struct t{
@@ -54,4 +54,32 @@ int main(){
     testMem(a[0], NULL);
     testMem(a[0], 0);
     testMem(a[0], b); 
+
+	char output[80];
+	memset(output, 0, 80);
+	sprintf(output, "QUANTA ELAPSED: %d", a[0]);
+	printf("%-25s\n", output);
+	sprintf(output, "MEMORY: %d b", a[0]);
+	printf("%-25s", output);
+	sprintf(output, "USED: %d b", a[0]);
+	printf("%-25s", output);
+	sprintf(output, "FREE: %d b (%.2f%%)", a[0], a[0]);
+	printf("%-25s\n", output);
+	sprintf(output, "PROCESS: %d b (%.2f%%)", a[0], a[0]);
+	printf("%-25s", output);
+	sprintf(output, "LOADED: %d b (%.2f%%)", a[0], a[0]);
+	printf("%-25s", output);
+	sprintf(output, "UNLOADED: %d b (%.2f%%)", a[0], a[0]);
+	printf("%-25s\n", output);
+
+	/*
+	cout << "QUANTA ELAPSED: " << a[0] << endl;
+	
+	cout << "MEMORY: " << a[0] << setw(5) << "b ";
+	cout << "USED: " << a[0] << setw(5) << "b (" << setprecision(2) << a[0] << "%) ";
+	cout << "FREE: " << a[0] << "b (" << setprecision(2) << a[0] << "%) " << endl;
+
+	cout << "PROCESSES: " << setw(5) << a[0] << "LOADED: " << a[0] << "(" << fixed << setprecision(2) << a[0] << setw(15) << "%) ";
+	cout << "UNLOADED: " << setw(5) << a[0] << " (" << fixed << setprecision(2) << a[0] << "%) " << endl;
+	*/
 }
