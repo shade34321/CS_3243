@@ -4,6 +4,7 @@
 //Shade Alabsa, Duncuan Thomas, Matthew Trussell
 //Date: 6 July 2014
 //File: partone.cpp
+// http://pastebin.com/b13sQ5tt
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -46,7 +47,7 @@ struct processMap{
 };
 
 struct back_store{
-	process bs[MAX_MEMORY];
+	int bs[MAX_MEMORY];
 	int capacity;
 	int size;
 	int head;
@@ -78,9 +79,11 @@ vector<hole> holes;
 void initProcesses();
 void createProcess(int, int);
 void printMemory();
+void printBackStore();
 void printProcess();
 void printMemoryMap();
 bool putInMemory(int, process *);
+bool putInBackStore(int, process *);
 int getburstTime();
 
 int main(){
@@ -95,13 +98,19 @@ int main(){
 	backStore.size = 0;
 	backStore.head = 0;
 	backStore.tail = 0;
+	memset(backStore.bs, -1, sizeof(backStore.bs));
 
 	initProcesses();
 	//printProcess();
 	//printMemory();
-	printMemoryMap();
+	
 	putInMemory(0, &pMap.processes[0]);
-	printMemory();
+	putInMemory(120, &pMap.processes[1]);
+
+	putInBackStore(0, &pMap.processes[2]);
+	putInBackStore(240, &pMap.processes[4]);
+	//printMemory();
+	printBackStore();
 	printMemoryMap();
 }
 
@@ -109,54 +118,50 @@ int getburstTime(){
 	return (rand() % MAX_BURST + MIN_BURST);
 }
 
-bool putInBackStore(int start){
-	/*
-	process *p;
-	p = &pMap.processes[start];
+bool putInBackStore(int start, process *p){
+	if (p){ //process is going straight to the back store - will probably never happen but during testing:)
+		for (int i = 0; i < p->memorySize; i++){
+			backStore.bs[backStore.tail + i] = p->pid;
+		}
+	}
+	else { //pull it from the back store
+		//Doing this first since I need to know where the tail is at
+		pMap.numProcess--;
+		pMap.memUsed -= pMap.processes[pMap.memory[start]].memorySize;
+		pMap.processes[pMap.memory[start]].memStart = backStore.tail;
+		pMap.processes[pMap.memory[start]].state = IDLE;
 
-	if ((backStore.capacity - backStore.tail + 1) < p->memorySize){ //The tail 
-		//memcpy(backStore.bs[backStore.tail]);
+		for (int i = 0; i < pMap.processes[start].memorySize; i++){
+			backStore.bs[backStore.tail] = pMap.memory[start + i]; //copy the memory over
+			pMap.memory[start + i] = -1; //set the memory as free
+			backStore.tail = (backStore.tail + 1) % backStore.capacity; //set the new tail
+		}
 	}
 
-	pMap.numProcess--;
-	pMap.memUsed -= p->memorySize;
-	*/
+	return true;
 }
 
-bool putInMemory(int start, process *p){
-	cout << "Inside put Memory" << endl;
-
-	for (int i = 0; i < p->memorySize; i++){
-		pMap.memory[start] = p->pid;
-		start++;
-	}
-
-	if (p->processID != 64) {
-		pMap.numProcess++;
-	}
-	pMap.memUsed += p->memorySize;
-	/*
-	if (p) { //if we pass in a process
+bool putInMemory(int start, process *p){	
+	if (p){ //process is just starting and is not in the back store
 		for (int i = 0; i < p->memorySize; i++){
-			pMap.memory[start] = *p;
-			start++;
+			pMap.memory[start+i] = p->pid;
 		}
-
-		if (p->processID != 64) {
-			pMap.numProcess++;
+	} else { //pull it from the back store		
+		for (int i = 0; i < pMap.processes[backStore.bs[backStore.head]].memorySize; i++){
+			pMap.memory[start + i] = pMap.processes[backStore.bs[backStore.head]].pid;
+			backStore.bs[backStore.head] = -1;
+			backStore.head = (backStore.head + 1) % backStore.capacity;
 		}
-		pMap.memUsed += p->memorySize;
-	} else {
-		cout << "Inside else" << endl;
-		process *temp;
-		temp = &pMap.memory[start]; //Get the front of the backStore
-
-		memcpy(temp, backStore.bs, (backStore.bs[backStore.head].memorySize * sizeof(process)));
-		pMap.memUsed += backStore.bs[backStore.head].memorySize;
-		pMap.numProcess++;
-		//Update backstore with new head
 	}
-	*/
+
+	if (pMap.processes[backStore.bs[backStore.head]].processID != 64) {
+		pMap.numProcess++;
+	}
+
+	pMap.memUsed += pMap.processes[backStore.bs[backStore.head]].memorySize;
+	pMap.processes[backStore.bs[backStore.head]].memStart = start;
+	pMap.processes[backStore.bs[backStore.head]].state = RUNNING;
+
 	return true;
 }
 
@@ -218,7 +223,7 @@ void printMemory(){
 			sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
 		}
 		else {
-			sprintf(output, "{");
+			sprintf(output, " ");
 		}
 
 		if ((j + 1) % 80 == 0){
@@ -228,24 +233,35 @@ void printMemory(){
 			printf("%s", output);
 		}
 	}
-	/*
-	for (int i = 0; i < MAX_MEMORY; i++){
-		if ((i+1) % 80 == 0){
-			printf("%d\n", pMap.memory[i]);
-		} else {
-			printf("%d", pMap.memory[i]);
+}
+
+void printBackStore(){
+	char output[80];
+	bool test = true;
+	memset(output, 0, 80);
+
+	for (int j = 0; j < MAX_MEMORY; j++){ //For the top numbers
+		//print process ID;
+		if (backStore.bs[j] != -1){
+			sprintf(output, "%c", (char)pMap.processes[backStore.bs[j]].processID);
+		}
+		else {
+			sprintf(output, " ");
+		}
+
+		if ((j + 1) % 80 == 0){
+			printf("%s\n", output);
+		}
+		else {
+			printf("%s", output);
 		}
 	}
-	printf("\n");
-	*/
 }
 
 void printProcess(){
-	//cout << "ProcessID" << setw(10) << "PID" << " Memory Size" << " Memory Start" << " Burst Time" << " State" << endl;
 	printf("ProcessID\tPID\tMemory Size\tMemory Start\tBurst Time\tState\n");
 	for (int i = 0; i < MAX_PROCESSES + 1; i++){
 		printf("%c\t\t%d\t%d\t\t%d\t\t%d\t\t%d\n", pMap.processes[i].processID, pMap.processes[i].pid, pMap.processes[i].memorySize, pMap.processes[i].memStart, pMap.processes[i].burstTime, pMap.processes[i].state);
-		//cout << pMap.processes[i].processID << setw(10) << pMap.processes[i].pid << setw(10) << pMap.processes[i].memorySize << setw(10) << pMap.processes[i].memStart << setw(10) << pMap.processes[i].burstTime << setw(10) << pMap.processes[i].state << endl;
 	}
 }
 
