@@ -84,6 +84,8 @@ void printProcess();
 void printMemoryMap();
 bool putInMemory(int, process *);
 bool putInBackStore(int, process *);
+void findHoles();
+void printHoles();
 int getburstTime();
 
 int main(){
@@ -101,18 +103,55 @@ int main(){
 	memset(backStore.bs, -1, sizeof(backStore.bs));
 
 	initProcesses();
-	//printProcess();
-	//printMemory();
 	
 	putInMemory(0, &pMap.processes[0]);
 	putInMemory(120, &pMap.processes[1]);
 	putInMemory(400, &pMap.processes[5]);
 
+	/*
+	printf("Inserted process @, 0, and 4 into memory\n");
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[0].processID, pMap.processes[0].memStart, pMap.processes[0].memorySize);
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[1].processID, pMap.processes[1].memStart, pMap.processes[1].memorySize);
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
+	printMemory();
+
+	printf("Inserted process 1 into the backstore\n");
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[2].processID, pMap.processes[2].memStart, pMap.processes[2].memorySize);
+	printf("backstore: tail %d\n", backStore.tail);
+	*/
 	putInBackStore(0, &pMap.processes[2]);
-	//putInBackStore(240, &pMap.processes[4]);
-	putInBackStore(400, NULL);
-	//printMemory();
+	/*
 	printBackStore();
+	printMemory();
+
+	printf("Inserted process 3 into the backstore\n");
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[4].processID, pMap.processes[4].memStart, pMap.processes[4].memorySize);
+	printf("backstore: tail %d\n", backStore.tail);
+	*/
+	putInBackStore(0, &pMap.processes[4]);
+	printBackStore();
+	printMemory();
+
+	printf("Inserted process 4 into the backstore\n");
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
+	printf("backstore: tail %d\n", backStore.tail);
+	putInBackStore(400, NULL);
+	printMemory();
+	printBackStore();
+
+	findHoles();
+	printHoles();
+
+	printf("Pulling from backstore\n");
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memStart, pMap.processes[backStore.bs[backStore.head]].memorySize);
+	printf("backstore head: %d\n", backStore.head);
+	putInMemory(300, NULL);
+	printMemory();
+	printBackStore();
+	printf("backstore head: %d\n", backStore.head);
+	findHoles();
+	printHoles();
+
 	//printMemoryMap();
 }
 
@@ -120,24 +159,65 @@ int getburstTime(){
 	return (rand() % MAX_BURST + MIN_BURST);
 }
 
+void findHoles(){
+	int i, j = 0;
+	hole *h = (hole *)malloc(sizeof(hole));
+	holes.clear();
+
+	h->size = 0;
+
+	printf("Inside findHoles\n");
+
+	for (i = 0; i < MAX_MEMORY; i++){
+		if (pMap.memory[i] == -1){
+			h->start = i;
+			while (pMap.memory[i] == -1){
+				h->size++;
+				i++;
+			}
+			holes.push_back(*h);
+		}
+	}
+}
+
+void printHoles(){
+	if (holes.size() == 0){
+		printf("No possible holes\n");
+	} else {
+		printf("Possible holes\n");
+		for (int i = 0; i < holes.size(); i++){
+			printf("Hole: %d\tstart: %d\tsize: %d\n", i, holes.at(i).start, holes.at(i).size);
+		}
+	}
+}
+
 bool putInBackStore(int start, process *p){
-	if (p){ //process is going straight to the back store - will probably never happen but during testing:)
+    if (p){ //process is going straight to the back store - will probably never happen but during testing:)
 		for (int i = 0; i < p->memorySize; i++){
-			backStore.bs[backStore.tail + i] = p->pid;
+			backStore.bs[backStore.tail] = p->pid;
+			backStore.tail = (backStore.tail + 1) % backStore.capacity; //set the new tail
 		}
 	}
 	else { //pull it from the back store
 		//Doing this first since I need to know where the tail is at
-		pMap.numProcess--;
-		pMap.memUsed -= pMap.processes[pMap.memory[start]].memorySize;
-		pMap.processes[pMap.memory[start]].memStart = backStore.tail;
-		pMap.processes[pMap.memory[start]].state = IDLE;
-
-		for (int i = 0; i < pMap.processes[pMap.memory[start]].memorySize; i++){
+		//printf("Taking from memory\n");
+		//printf("start: %d\t tail: %d\t Size: %d\n", start, backStore.tail, pMap.processes[pMap.memory[start]].memorySize);
+		int mem = pMap.processes[pMap.memory[start]].memorySize;
+        int tail = backStore.tail; //Temp variable so we can assign where the memory is at later
+		for (int i = 0; i < mem; i++){
+			//printf("i: %d\t taking: %d\n", i, (start + i));
 			backStore.bs[backStore.tail] = pMap.memory[start + i]; //copy the memory over
-			pMap.memory[pMap.memory[start] + i] = -1; //set the memory as free
+			//printf("backStore tail value: %d\t", backStore.bs[backStore.tail]);
+			pMap.memory[start + i] = -1; //set the memory as free
+			//printf("previous memory: %d\t", pMap.memory[start + i]);
 			backStore.tail = (backStore.tail + 1) % backStore.capacity; //set the new tail
+			//printf("New tail: %d\n", backStore.tail);
 		}
+
+		pMap.numProcess--;
+		pMap.memUsed -= pMap.processes[backStore.tail-1].memorySize;
+		pMap.processes[pMap.memory[start]].memStart = tail;
+		pMap.processes[pMap.memory[start]].state = IDLE;
 	}
 
 	return true;
@@ -149,9 +229,10 @@ bool putInMemory(int start, process *p){
 			pMap.memory[start + i] = p->pid;
 		}
 	}
-	else { //pull it from the back store		
-		for (int i = 0; i < pMap.processes[backStore.bs[backStore.head]].memorySize; i++){
-			pMap.memory[start + i] = pMap.processes[backStore.bs[backStore.head]].pid;
+	else { //pull it from the back store
+		int mem = pMap.processes[backStore.bs[backStore.head]].memorySize;
+		for (int i = 0; i < mem; i++){
+			pMap.memory[start + i] = backStore.bs[backStore.head];
 			backStore.bs[backStore.head] = -1;
 			backStore.head = (backStore.head + 1) % backStore.capacity;
 		}
