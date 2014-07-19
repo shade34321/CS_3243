@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <algorithm>
 #include <string.h>
 
 using namespace std;
@@ -58,6 +59,8 @@ struct back_store{
 struct hole{
 	int start;
 	int size;
+
+
 };
 
 enum mem_allocation {
@@ -88,6 +91,8 @@ void findHoles();
 void printHoles();
 bool firstFit(process *p);
 int getburstTime();
+bool bestFit(process *);
+bool compareBestFit(const hole &, const hole &);
 
 int main(){
 	srand(time(NULL));	//seeding for random numbers
@@ -130,14 +135,12 @@ int main(){
 	printf("backstore: tail %d\n", backStore.tail);
 	*/
 	putInBackStore(0, &pMap.processes[4]);
-	//printBackStore();
-	//printMemory();
-
+	
 	//printf("Inserted process 4 into the backstore\n");
 	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
 	//printf("backstore: tail %d\n", backStore.tail);
 	putInBackStore(400, NULL);
-	//printMemory();
+	printMemory();
 	//printBackStore();
 
 	//findHoles();
@@ -153,20 +156,21 @@ int main(){
 	//findHoles();
 	//printHoles();
 
-	printf("Inserted process %d into the backstore\n", pMap.processes[48]);
+	printf("Inserted process %d into the backstore\n", pMap.processes[48].processID);
 	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[48].processID, pMap.processes[48].memStart, pMap.processes[48].memorySize);
 	printMemory();
-	printBackStore();
+	//printBackStore();
 	firstFit(&pMap.processes[48]);
 	printMemory();
-	printBackStore();
+	//printBackStore();
 
 	printMemory();
-	printBackStore();
+	//printBackStore();
 	firstFit(NULL);
 	printMemory();
 	printBackStore();
 
+	//bestFit(&pMap.processes[48]);
 	//printMemoryMap();
 }
 
@@ -179,10 +183,15 @@ void findHoles(){
 	hole *h = (hole *)malloc(sizeof(hole));
 	holes.clear();
 
+	printf("Inside findHoles\n");
+	printMemory();
+
 	h->size = 0;
 
 	for (i = 0; i < MAX_MEMORY; i++){
-		if (pMap.memory[((j+i)%MAX_MEMORY)] == -1){ //should handle wrapping holes - need to test
+		//int b = i % MAX_MEMORY;
+		//printf("Checking %d\t %d\n", b, pMap.memory[b]);
+		if (pMap.memory[i % MAX_MEMORY] == -1){ //should handle wrapping holes - need to test
 			h->start = i;
 			while (pMap.memory[i] == -1){
 				h->size++;
@@ -204,10 +213,34 @@ void printHoles(){
 	}
 }
 
+bool compareBestFit(const hole &a, const hole &b){
+	return a.size < b.size;
+}
+
+/*
+// Get All holes then sort from lowest to highest.
+// Loop over the various holes to find a hole small enough to fit what we need
+// Insert memory/process in memory
+*/
+
+bool bestFit(process *p){
+	process *temp;
+	findHoles();
+	printHoles();
+
+	sort(holes.begin(), holes.end(), compareBestFit);
+
+	printHoles();
+
+	return true;
+}
+
 bool firstFit(process *p){
 	process *temp;
 	findHoles(); //Get updated list of holes
 	printHoles();
+
+	//printMemory();
 
 	//Do we have a hole big enough?
 	for (int i = 0; i < holes.size(); i++){
@@ -222,6 +255,8 @@ bool firstFit(process *p){
 			return true;
 		}
 	}
+
+	//printMemory();
 
 	//check for IDLE Processes next
 	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
@@ -241,17 +276,18 @@ bool firstFit(process *p){
 		}
 	}
 
+	//printMemory();
+
 	return false;
 }
 
 bool putInBackStore(int start, process *p){
-    if (p){ //process is going straight to the back store - will probably never happen but during testing:)
+	if (p){ //process is going straight to the back store - will probably never happen but during testing:)
 		for (int i = 0; i < p->memorySize; i++){
 			backStore.bs[backStore.tail] = p->pid;
 			backStore.tail = (backStore.tail + 1) % backStore.capacity; //set the new tail
 		}
-	}
-	else { //pull it from the back store
+	} else { //pull it from the back store
 		//Doing this first since I need to know where the tail is at
 		//printf("Taking from memory\n");
 		//printf("start: %d\t tail: %d\t Size: %d\n", start, backStore.tail, pMap.processes[pMap.memory[start]].memorySize);
@@ -269,8 +305,8 @@ bool putInBackStore(int start, process *p){
 
 		pMap.numProcess--;
 		pMap.memUsed -= pMap.processes[backStore.tail-1].memorySize;
-		pMap.processes[pMap.memory[start]].memStart = tail;
-		pMap.processes[pMap.memory[start]].state = IDLE;
+		pMap.processes[backStore.tail - 1].memStart = tail;
+		pMap.processes[backStore.tail - 1].state = IDLE;
 	}
 
 	return true;
