@@ -1,7 +1,7 @@
 //CS3242 Operating Systems
 //Summer 2014
 //Project 5: Swapping and Paging, Part 1
-//Shade Alabsa, Duncuan Thomas, Matthew Trussell
+//Shade Alabsa, Duncuan Thomas, Mathew Trussell
 //Date: 6 July 2014
 //File: partone.cpp
 // http://pastebin.com/b13sQ5tt
@@ -55,12 +55,9 @@ struct back_store{
 	int tail;
 };
 
-
 struct hole{
 	int start;
 	int size;
-
-
 };
 
 enum mem_allocation {
@@ -89,25 +86,35 @@ bool putInMemory(int, process *);
 bool putInBackStore(int, process *);
 void findHoles();
 void printHoles();
-bool firstFit(process *p);
 int getburstTime();
-bool bestFit(process *);
+
+bool firstFit(process *p);
+bool worstFit(process *p);
+bool bestFit(process *p);
 bool compareBestFit(const hole &, const hole &);
+
+int getUserInput();
 
 int main(){
 	srand(time(NULL));	//seeding for random numbers
-
+	
+	// Get input from the user to determine the process allocation algorithm
+	mem_allocation algorithm = (mem_allocation) getUserInput();
+	
+	// Init the memory map
 	pMap.memUsed = 0;
 	pMap.numProcess = 0;
 	pMap.currentQuanta = 0;
 	memset(pMap.memory, -1, sizeof(pMap.memory));
 
+	// Init the backing store
 	backStore.capacity = MAX_MEMORY;
 	backStore.size = 0;
 	backStore.head = 0;
 	backStore.tail = 0;
 	memset(backStore.bs, -1, sizeof(backStore.bs));
 
+	// Init all the processes
 	initProcesses();
 	
 	putInMemory(0, &pMap.processes[0]);
@@ -172,6 +179,43 @@ int main(){
 
 	//bestFit(&pMap.processes[48]);
 	//printMemoryMap();
+	
+	/* This would be the basic structure to use the user selected alogrithm each time, once we get it set up
+	to loop for MAX_QUANTA durations 
+	*/
+	switch(algorithm) {
+		case FIRST:
+			firstFit(&pMap.processes[48]);
+			break;
+		case WORST:
+			worstFit(&pMap.processes[48]);
+			break;
+		case BEST:
+			bestFit(&pMap.processes[48]);
+			break;
+		default:
+			// Do nothing
+			break;	
+	}
+
+	printMemoryMap();
+}
+
+int getUserInput() {
+	int input = -1;
+	
+	while(input < 1 || input > 3) {
+		cout << "Choose the allocation algorithm: (1) First, (2) Worst, (3) Best: ";
+		cin >> input;
+		cout << "\n";
+		
+		if (input < 1 || input > 3)
+		{
+			input = -1;
+		}
+	}
+	
+	return input;	
 }
 
 int getburstTime(){
@@ -211,6 +255,10 @@ void printHoles(){
 			printf("Hole: %d\tstart: %d\tsize: %d\n", i, holes.at(i).start, holes.at(i).size);
 		}
 	}
+}
+
+bool worstFit(process *p){
+	return true;
 }
 
 bool compareBestFit(const hole &a, const hole &b){
@@ -490,6 +538,7 @@ void printProcess(){
 	}
 }
 
+// Prints the memory stats, then calls printMemory() to print the actual memory "array"
 void printMemoryMap(){
 	int free = MAX_MEMORY - pMap.memUsed;
 	double usedPercent = pMap.memUsed / ((double)MAX_MEMORY) * 100;
@@ -505,16 +554,16 @@ void printMemoryMap(){
 	
 	memset(output, 0, 80);
 	
-	sprintf(output, "QUANTA ELAPSED: %d", pMap.currentQuanta);
+	sprintf(output, "\nQUANTA ELAPSED: %d", pMap.currentQuanta);
 	printf("%-25s\n", output);
 	sprintf(output, "MEMORY: %d b", MAX_MEMORY);
-	printf("%-25s", output);
+	printf("%-20s", output);
 	sprintf(output, "USED: %d b (%.2f%%)", pMap.memUsed, usedPercent);
 	printf("%-25s", output);
 	sprintf(output, "FREE: %d b (%.2f%%)", free, freePercent);
 	printf("%-25s\n", output);
 	sprintf(output, "PROCESS: %d", MAX_PROCESSES);
-	printf("%-25s", output);
+	printf("%-20s", output);
 	sprintf(output, "LOADED: %d b (%.2f%%)", pMap.numProcess, numProcessPercent);
 	printf("%-25s", output);
 	sprintf(output, "UNLOADED: %d b (%.2f%%)", unloadedProcess, unloadedPercent);
@@ -522,40 +571,5 @@ void printMemoryMap(){
 
 	printf("%s\n", string(80, '=').c_str());
 
-	for (int i = 0; i < MAX_MEMORY; i+=80){
-		
-		for (int j = (i+9); j < (i+80); j+=10){ //For the top numbers
-			sprintf(output, "%d", j);
-			if ((j + 1) % 80 == 0){
-				printf("%10s\n", output);
-			} else {
-				printf("%10s", output);
-			}
-		}
-		
-		for (int j = 0; j < 8; j++){
-			if ((j + 1) % 8 == 0){
-				printf("----+----|\n");
-			} else {
-				printf("----+----|");
-			}
-		}
-
-		for (int j = i; j < (i+80); j++){ //For the top numbers
-			//print process ID;
-			if (pMap.memory[j] != -1){
-				sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
-			} else {
-				sprintf(output, " ");
-			}
-
-			if ((j + 1) % 80 == 0){
-				printf("%s\n", output);
-			} else {
-				printf("%s", output);
-			}
-		}
-	}
-
-	printf("%s\n", string(80, '=').c_str());
+	printMemory();
 }
