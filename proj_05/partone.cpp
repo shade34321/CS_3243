@@ -41,7 +41,7 @@ struct process{
 
 struct processMap{
 	int memory[MAX_MEMORY];			//Total bytes of memory
-	process processes[MAX_PROCESSES+1];		//array of process we can have.
+	process processes[MAX_PROCESSES];		//array of process we can have.
 	int numProcess;
 	int memUsed;
 	int currentQuanta;
@@ -82,24 +82,26 @@ void printMemory();
 void printBackStore();
 void printProcess();
 void printMemoryMap();
-bool putInMemory(int, process *);
-bool putInBackStore(int, process *);
 void findHoles();
 void printHoles();
-int getburstTime();
+void compaction();
+void clearMemory(int, int);
 
 bool firstFit(process *p);
 bool worstFit(process *p);
 bool bestFit(process *p);
 bool compareBestFit(const hole &, const hole &);
+bool putInMemory(int, process *);
+bool putInBackStore(int, process *);
 
 int getUserInput();
+int getburstTime();
 
 int main(){
 	srand(time(NULL));	//seeding for random numbers
 	
 	// Get input from the user to determine the process allocation algorithm
-	mem_allocation algorithm = (mem_allocation) getUserInput();
+	//mem_allocation algorithm = (mem_allocation) getUserInput();
 	
 	// Init the memory map
 	pMap.memUsed = 0;
@@ -177,12 +179,16 @@ int main(){
 	printMemory();
 	printBackStore();
 
+
+	compaction();
+	printMemory();
 	//bestFit(&pMap.processes[48]);
 	//printMemoryMap();
 	
 	/* This would be the basic structure to use the user selected alogrithm each time, once we get it set up
 	to loop for MAX_QUANTA durations 
 	*/
+	/*
 	switch(algorithm) {
 		case FIRST:
 			firstFit(&pMap.processes[48]);
@@ -197,8 +203,7 @@ int main(){
 			// Do nothing
 			break;	
 	}
-
-	printMemoryMap();
+	*/
 }
 
 int getUserInput() {
@@ -222,6 +227,34 @@ int getburstTime(){
 	return (rand() % MAX_BURST + MIN_BURST);
 }
 
+void clearMemory(int start, int size){
+	printf("start: %d\tsize: %d\n", start, size);
+	for (int i = start; i < (start + size); i++){
+		pMap.memory[i] = -1;
+	}
+}
+
+void compaction(){
+	findHoles();
+	process *p;
+
+	printf("Inside compaction\n");
+	printHoles();
+
+	while(holes.at(0).start + holes.at(0).size != 1040){
+		printf("memory[%d]: %d\t memory[%d]: %d\tmemory[%d]: %d \n", (holes.at(0).start - 1), pMap.memory[holes.at(0).start - 1], holes.at(0).start, pMap.memory[holes.at(0).start], (holes.at(0).start + 1), pMap.memory[holes.at(0).start + 1]);
+		int holeEnding = holes.at(0).start + holes.at(0).size;
+		printf("holeEnding: %d\n", holeEnding);
+		printf("memory[%d]: %d\t memory[%d]: %d\tmemory[%d]: %d \n", (holeEnding - 1), pMap.memory[holeEnding - 1], holeEnding, pMap.memory[holeEnding], (holeEnding + 1), pMap.memory[holeEnding + 1]);
+		int umm = pMap.processes[pMap.memory[holeEnding]].memorySize + holes.at(0).start;
+		printf("Moving %c from %d to %d. It has a size of %d and will end at %d\n", pMap.processes[pMap.memory[holeEnding]].processID, pMap.processes[pMap.memory[holeEnding]].memStart, holes.at(0).start, pMap.processes[pMap.memory[holeEnding]].memorySize, umm);
+		p = &pMap.processes[pMap.memory[holeEnding]];
+		clearMemory(p->memStart, p->memorySize);
+		putInMemory(holes.at(0).start, p);
+		findHoles();
+	}
+}
+
 void findHoles(){
 	int i, j = backStore.head;
 	hole *h = (hole *)malloc(sizeof(hole));
@@ -243,6 +276,7 @@ void findHoles(){
 			}
 			holes.push_back(*h);
 		}
+		h->size = 0;
 	}
 }
 
@@ -390,7 +424,7 @@ void initProcesses(){
 
 	createProcess(0, 64); //create root process
 
-	for (i = 48; i < 58; i++){
+	for (i = 49; i < 58; i++){
 		createProcess(j, i);
 		j++;
 	}
@@ -564,10 +598,19 @@ void printMemoryMap(){
 	printf("%-25s\n", output);
 	sprintf(output, "PROCESS: %d", MAX_PROCESSES);
 	printf("%-20s", output);
-	sprintf(output, "LOADED: %d b (%.2f%%)", pMap.numProcess, numProcessPercent);
+	sprintf(output, "LOADED: %d (%.2f%%)", pMap.numProcess, numProcessPercent);
 	printf("%-25s", output);
-	sprintf(output, "UNLOADED: %d b (%.2f%%)", unloadedProcess, unloadedPercent);
+	sprintf(output, "UNLOADED: %d (%.2f%%)", unloadedProcess, unloadedPercent);
 	printf("%-25s\n", output);
+	//Need to do
+	sprintf(output, "FREE BLOCKS: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-25s", output);
+	sprintf(output, "LARGEST: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-15s", output);
+	sprintf(output, "SMALLEST: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-15s", output);
+	sprintf(output, "BLOCKS/PROCS RATIO: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-20s\n", output);
 
 	printf("%s\n", string(80, '=').c_str());
 
