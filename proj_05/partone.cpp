@@ -41,7 +41,7 @@ struct process{
 
 struct processMap{
 	int memory[MAX_MEMORY];			//Total bytes of memory
-	process processes[MAX_PROCESSES+1];		//array of process we can have.
+	process processes[MAX_PROCESSES];		//array of process we can have.
 	int numProcess;
 	int memUsed;
 	int currentQuanta;
@@ -82,25 +82,28 @@ void printMemory();
 void printBackStore();
 void printProcess();
 void printMemoryMap();
-bool putInMemory(int, process *);
-bool putInBackStore(int, process *);
 void findHoles();
 void printHoles();
-int getburstTime();
+void compaction();
+void clearMemory(int, int);
 
 bool firstFit(process *p);
 bool worstFit(process *p);
 bool bestFit(process *p);
 bool putProcessInHole(process *p);
 bool compareBestFit(const hole &, const hole &);
+bool putInMemory(int, process *);
+bool putInBackStore(int, process *);
+bool putProcessInHole(process *p);
 
 int getUserInput();
+int getburstTime();
 
 int main(){
 	srand(time(NULL));	//seeding for random numbers
 	
 	// Get input from the user to determine the process allocation algorithm
-	mem_allocation algorithm = (mem_allocation) getUserInput();
+	//mem_allocation algorithm = (mem_allocation) getUserInput();
 	
 	// Init the memory map
 	pMap.memUsed = 0;
@@ -134,6 +137,7 @@ int main(){
 	*/
 
 	
+<<<<<<< HEAD
 	firstFit(&pMap.processes[22]);
 	//firstFit(&pMap.processes[23]);
 		
@@ -142,11 +146,57 @@ int main(){
 	
 	worstFit(&pMap.processes[55]);
 	//worstFit(&pMap.processes[56]);
+=======
+	//printf("Inserted process 4 into the backstore\n");
+	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
+	//printf("backstore: tail %d\n", backStore.tail);
+	putInBackStore(400, NULL);
+	printMemory();
+	//printBackStore();
+
+	//findHoles();
+	//printHoles();
+
+	//printf("Pulling from backstore\n");
+	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memStart, pMap.processes[backStore.bs[backStore.head]].memorySize);
+	//printf("backstore head: %d\n", backStore.head);
+	putInMemory(300, NULL);
+	//printMemory();
+	//printBackStore();
+	//printf("backstore head: %d\n", backStore.head);
+	//findHoles();
+	//printHoles();
+
+	printf("Inserted process %d into the backstore\n", pMap.processes[48].processID);
+	printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[48].processID, pMap.processes[48].memStart, pMap.processes[48].memorySize);
+	printMemory();
+	//printBackStore();
+	firstFit(&pMap.processes[48]);
+	printMemory();
+	//printBackStore();
+
+	printMemory();
+	//printBackStore();
+	firstFit(NULL);
+	printMemory();
+	printBackStore();
+
+
+	compaction();
+	printMemory();
+	//bestFit(&pMap.processes[48]);
+	//printMemoryMap();
+>>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 	
 	/* This would be the basic structure to use the user selected alogrithm each time, once we get it set up
 	to loop for MAX_QUANTA durations 
 	*/
+<<<<<<< HEAD
 	/*switch(algorithm) {
+=======
+	/*
+	switch(algorithm) {
+>>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 		case FIRST:
 			firstFit(&pMap.processes[48]);
 			break;
@@ -159,9 +209,14 @@ int main(){
 		default:
 			// Do nothing
 			break;	
+<<<<<<< HEAD
 	}*/
 
 	printMemoryMap();
+=======
+	}
+	*/
+>>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 }
 
 int getUserInput() {
@@ -183,6 +238,34 @@ int getUserInput() {
 
 int getburstTime(){
 	return (rand() % MAX_BURST + MIN_BURST);
+}
+
+void clearMemory(int start, int size){
+	printf("start: %d\tsize: %d\n", start, size);
+	for (int i = start; i < (start + size); i++){
+		pMap.memory[i] = -1;
+	}
+}
+
+void compaction(){
+	findHoles();
+	process *p;
+
+	printf("Inside compaction\n");
+	printHoles();
+
+	while(holes.at(0).start + holes.at(0).size != 1040){
+		printf("memory[%d]: %d\t memory[%d]: %d\tmemory[%d]: %d \n", (holes.at(0).start - 1), pMap.memory[holes.at(0).start - 1], holes.at(0).start, pMap.memory[holes.at(0).start], (holes.at(0).start + 1), pMap.memory[holes.at(0).start + 1]);
+		int holeEnding = holes.at(0).start + holes.at(0).size;
+		printf("holeEnding: %d\n", holeEnding);
+		printf("memory[%d]: %d\t memory[%d]: %d\tmemory[%d]: %d \n", (holeEnding - 1), pMap.memory[holeEnding - 1], holeEnding, pMap.memory[holeEnding], (holeEnding + 1), pMap.memory[holeEnding + 1]);
+		int umm = pMap.processes[pMap.memory[holeEnding]].memorySize + holes.at(0).start;
+		printf("Moving %c from %d to %d. It has a size of %d and will end at %d\n", pMap.processes[pMap.memory[holeEnding]].processID, pMap.processes[pMap.memory[holeEnding]].memStart, holes.at(0).start, pMap.processes[pMap.memory[holeEnding]].memorySize, umm);
+		p = &pMap.processes[pMap.memory[holeEnding]];
+		clearMemory(p->memStart, p->memorySize);
+		putInMemory(holes.at(0).start, p);
+		findHoles();
+	}
 }
 
 void findHoles(){
@@ -219,6 +302,7 @@ void printHoles(){
 	}
 }
 
+<<<<<<< HEAD
 bool worstFit(process *p){
 	printf("\nWORST FIT\n");
 	
@@ -269,10 +353,13 @@ bool worstFit(process *p){
 	*/
 }
 
+=======
+>>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 bool compareBestFit(const hole &a, const hole &b){
 	return a.size < b.size;
 }
 
+<<<<<<< HEAD
 /*
 // Get All holes then sort from lowest to highest.
 // Loop over the various holes to find a hole small enough to fit what we need
@@ -370,6 +457,82 @@ bool putProcessInHole(process *p){
 	}
 
 	return false;
+=======
+bool putProcessInHole(process *p);
+
+bool worstFit(process *p){
+	printf("\nWORST FIT\n");
+
+	findHoles();  //Get updated list of holes
+	printHoles();
+
+	sort(holes.begin(), holes.end(), compareBestFit);
+	reverse(holes.begin(), holes.end());
+
+	printHoles();
+
+	return putProcessInHole(p);
+}
+
+bool bestFit(process *p){
+	printf("\nBEST FIT\n");
+
+	findHoles();  //Get updated list of holes
+	printHoles();
+
+	sort(holes.begin(), holes.end(), compareBestFit);
+
+	printHoles();
+
+	return putProcessInHole(p);
+}
+
+bool firstFit(process *p){
+	printf("\nFIRST FIT\n");
+
+	findHoles();   //Get updated list of holes
+	printHoles();
+
+	return putProcessInHole(p);
+}
+
+bool putProcessInHole(process *p){
+	process *temp;
+	//Do we have a hole big enough?
+	for (int i = 0; i < holes.size(); i++){
+		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
+			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
+			putInMemory(holes.at(i).start, NULL);
+			return true;
+		}
+		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
+			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
+			putInMemory(holes.at(i).start, p);
+			return true;
+		}
+	}
+
+	//check for IDLE Processes next
+	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
+		temp = &pMap.processes[pMap.memory[i]];
+		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
+			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
+			putInBackStore(i, NULL);
+			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
+			putInMemory(i, NULL);
+			return true;
+		}
+		else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
+			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
+			putInBackStore(i, NULL);
+			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
+			putInMemory(i, p);
+			return true;
+		}
+	}
+
+	return false;
+>>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 }
 
 bool putInBackStore(int start, process *p){
@@ -433,7 +596,7 @@ void initProcesses(){
 
 	createProcess(0, 64); //create root process
 
-	for (i = 48; i < 58; i++){
+	for (i = 49; i < 58; i++){
 		createProcess(j, i);
 		j++;
 	}
@@ -607,10 +770,19 @@ void printMemoryMap(){
 	printf("%-25s\n", output);
 	sprintf(output, "PROCESS: %d", MAX_PROCESSES);
 	printf("%-20s", output);
-	sprintf(output, "LOADED: %d b (%.2f%%)", pMap.numProcess, numProcessPercent);
+	sprintf(output, "LOADED: %d (%.2f%%)", pMap.numProcess, numProcessPercent);
 	printf("%-25s", output);
-	sprintf(output, "UNLOADED: %d b (%.2f%%)", unloadedProcess, unloadedPercent);
+	sprintf(output, "UNLOADED: %d (%.2f%%)", unloadedProcess, unloadedPercent);
 	printf("%-25s\n", output);
+	//Need to do
+	sprintf(output, "FREE BLOCKS: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-25s", output);
+	sprintf(output, "LARGEST: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-15s", output);
+	sprintf(output, "SMALLEST: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-15s", output);
+	sprintf(output, "BLOCKS/PROCS RATIO: %d (%.2f%%)", unloadedProcess, unloadedPercent);
+	printf("%-20s\n", output);
 
 	printf("%s\n", string(80, '=').c_str());
 
