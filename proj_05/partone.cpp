@@ -213,19 +213,29 @@ int main(){
 
 int getUserInput() {
 	int input = -1;
+	const char *c;
+	std::string s;
 	
-	while(input < 1 || input > 3) {
-		cout << "Choose the allocation algorithm: (1) First, (2) Worst, (3) Best: ";
-		cin >> input;
-		cout << "\n";
+	do {
+		cin.clear();
+		cout << "\nChoose an algorithm: (1) First, (2) Worst, (3) Best: ";
 		
-		if (input < 1 || input > 3)
+		getline(cin, s);
+
+		c = &s[0];			
+		int x = atoi(c);
+		
+		if (x < 1 || x > 3)
 		{
-			input = -1;
+			printf("\nThats not 1, 2, or 3");
 		}
-	}
-	
-	return input;	
+		else
+		{
+			input = x;
+		}							
+	}while (input == -1);
+
+	return input;
 }
 
 int getburstTime(){
