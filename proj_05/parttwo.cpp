@@ -35,7 +35,8 @@ struct segment{
 
 struct process{
 	int pid;			//PID of the process
-	int processID;		//character to denote the process.
+	int processID;		//Character to denote the process.
+	int totalPages;		//Total pages for this process
 	
 	vector<segment> segments; // List of the segments of this process
 };
@@ -75,56 +76,62 @@ void initProcesses(){
 }
 
 void createProcess(int index, int processID){
-	printf("\nCreating process %c", (char)processID);
 	vector<segment> segs;
 	segment temp;
+	int totalPages = 0;
 	
 	if (processID == 64){
 		temp.numPages = 20;
 		temp.id = 0;
 		segs.push_back(temp);
+		totalPages = 20;
 	}
 	else {
 		// Code segment
 		temp.numPages = 2;
 		temp.id = 0;
 		segs.push_back(temp);
+		totalPages += 2;
 		
 		// Stack segment
 		temp.numPages = 3;
 		temp.id = 1;
 		segs.push_back(temp);
+		totalPages += 3;
 		
 		// Heap segment
 		temp.numPages = 5;
 		temp.id = 2;
 		segs.push_back(temp);
+		totalPages += 5;
 		
 		// Subroutine segments
 		int num_of_subs = rand() % 5 + 1;
-		printf("\nnum subs: %d\n", num_of_subs);
+
 		for(int i = 3; i < (3 + num_of_subs); i++)
 		{
 			temp.numPages = 2;
 			temp.id = i;
 			segs.push_back(temp);
+			totalPages += 2;
 		}
 	}
 	
 	pMap.processes[index].pid = index;
 	pMap.processes[index].processID = processID;
+	pMap.processes[index].totalPages = totalPages;
 	pMap.processes[index].segments = segs;
 	pMap.numProcess++;
 }
 
 void printProcesses() {	
 	process p;
+	printf("\nProcID\tPID\tSegs\tPages\n");
+	
 	for(int i = 0; i < pMap.numProcess; i++)
 	{
 		p = pMap.processes[i];
 		
-		printf("\nProcessID: %c", p.processID);
-		printf("\nPID: %d", p.pid);
-		printf("\nSEGMENTS: %lu\n", p.segments.size());
+		printf("%c\t%d\t%lu\t%d\n", p.processID, p.pid, p.segments.size(), p.totalPages);
 	}
 }
