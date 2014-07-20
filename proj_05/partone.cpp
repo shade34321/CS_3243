@@ -137,7 +137,7 @@ int main(){
 	*/
 
 	
-<<<<<<< HEAD
+
 	firstFit(&pMap.processes[22]);
 	//firstFit(&pMap.processes[23]);
 		
@@ -146,7 +146,7 @@ int main(){
 	
 	worstFit(&pMap.processes[55]);
 	//worstFit(&pMap.processes[56]);
-=======
+
 	//printf("Inserted process 4 into the backstore\n");
 	//printf("%c: start: %d\tsize: %d\n", (char)pMap.processes[5].processID, pMap.processes[5].memStart, pMap.processes[5].memorySize);
 	//printf("backstore: tail %d\n", backStore.tail);
@@ -186,17 +186,16 @@ int main(){
 	printMemory();
 	//bestFit(&pMap.processes[48]);
 	//printMemoryMap();
->>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
+
 	
 	/* This would be the basic structure to use the user selected alogrithm each time, once we get it set up
 	to loop for MAX_QUANTA durations 
 	*/
-<<<<<<< HEAD
+
 	/*switch(algorithm) {
-=======
+
 	/*
 	switch(algorithm) {
->>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 		case FIRST:
 			firstFit(&pMap.processes[48]);
 			break;
@@ -209,14 +208,10 @@ int main(){
 		default:
 			// Do nothing
 			break;	
-<<<<<<< HEAD
 	}*/
 
 	printMemoryMap();
-=======
 	}
-	*/
->>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 }
 
 int getUserInput() {
@@ -302,7 +297,6 @@ void printHoles(){
 	}
 }
 
-<<<<<<< HEAD
 bool worstFit(process *p){
 	printf("\nWORST FIT\n");
 	
@@ -353,13 +347,10 @@ bool worstFit(process *p){
 	*/
 }
 
-=======
->>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 bool compareBestFit(const hole &a, const hole &b){
 	return a.size < b.size;
 }
 
-<<<<<<< HEAD
 /*
 // Get All holes then sort from lowest to highest.
 // Loop over the various holes to find a hole small enough to fit what we need
@@ -457,10 +448,10 @@ bool putProcessInHole(process *p){
 	}
 
 	return false;
-=======
+
 bool putProcessInHole(process *p);
 
-bool worstFit(process *p){
+bool worstFit(process *p){}
 	printf("\nWORST FIT\n");
 
 	findHoles();  //Get updated list of holes
@@ -532,7 +523,6 @@ bool putProcessInHole(process *p){
 	}
 
 	return false;
->>>>>>> 3754c593b7fa7851631ce6051d23df24fa4f7dd7
 }
 
 bool putInBackStore(int start, process *p){
