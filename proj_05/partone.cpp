@@ -209,7 +209,6 @@ int main(){
 	}*/
 
 	printMemoryMap();
-	}
 }
 
 int getUserInput() {
@@ -295,161 +294,11 @@ void printHoles(){
 	}
 }
 
-bool worstFit(process *p){
-	printf("\nWORST FIT\n");
-	
-	process *temp;
-	findHoles();  //Get updated list of holes
-	printHoles();
-
-	sort(holes.begin(), holes.end(), compareBestFit);
-	reverse(holes.begin(), holes.end());
-
-	printHoles();
-
-	return putProcessInHole(p);
-	/*
-	//Do we have a hole big enough?
-	for (int i = 0; i < holes.size(); i++){
-		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, NULL);
-			return true;
-		}
-		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, p);
-			return true;
-		}
-	}
-
-	//check for IDLE Processes next
-	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
-		temp = &pMap.processes[pMap.memory[i]];
-		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(i, NULL);
-			return true;
-		} else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(i, p);
-			return true;
-		}
-	}
-
-	return false;
-	*/
-}
-
 bool compareBestFit(const hole &a, const hole &b){
 	return a.size < b.size;
 }
 
-/*
-// Get All holes then sort from lowest to highest.
-// Loop over the various holes to find a hole small enough to fit what we need
-// Insert memory/process in memory
-*/
-bool bestFit(process *p){
-	printf("\nBEST FIT\n");
-	
-	findHoles();  //Get updated list of holes
-	printHoles();
-
-	sort(holes.begin(), holes.end(), compareBestFit);
-
-	printHoles();
-
-	return putProcessInHole(p);
-	/*
-	//Do we have a hole big enough?
-	for (int i = 0; i < holes.size(); i++){
-		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, NULL);
-			return true;
-		}
-		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, p);
-			return true;
-		}
-	}
-
-	//check for IDLE Processes next
-	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
-		temp = &pMap.processes[pMap.memory[i]];
-		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(i, NULL);
-			return true;
-		} else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(i, p);
-			return true;
-		}
-	}
-
-	return false;
-	*/
-}
-
-bool firstFit(process *p){
-	printf("\nFIRST FIT\n");
-	process *temp;
-	findHoles();   //Get updated list of holes
-	printHoles();
-
-	return putProcessInHole(p);
-}
-
-bool putProcessInHole(process *p){
-	process *temp;
-	//Do we have a hole big enough?
-	for (int i = 0; i < holes.size(); i++){
-		if (!p && holes.at(i).size >= pMap.processes[backStore.bs[backStore.head]].memorySize){ //we are pulling from the backstore
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, NULL);
-			return true;
-		}
-		else if (p && holes.at(i).size >= p->memorySize) { //we were given a process to put in memory
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(holes.at(i).start, p);
-			return true;
-		}
-	}
-
-	//check for IDLE Processes next
-	for (int i = 0; i < MAX_MEMORY; i += pMap.processes[pMap.memory[i]].memorySize){
-		temp = &pMap.processes[pMap.memory[i]];
-		if (!p && temp->state == IDLE && temp->memorySize >= pMap.processes[backStore.bs[backStore.head]].memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)pMap.processes[backStore.bs[backStore.head]].processID, pMap.processes[backStore.bs[backStore.head]].memorySize, holes.at(i).start);
-			putInMemory(i, NULL);
-			return true;
-		} else if (p && temp->state == IDLE && temp->memorySize >= p->memorySize){
-			printf("Idle process at %d, it's the process %c and it has a state of %d\n", i, (char)pMap.processes[pMap.memory[i]].processID, pMap.processes[pMap.memory[i]].state);
-			putInBackStore(i, NULL);
-			printf("%c needs: %d and is being put at %d\n", (char)p->processID, p->memorySize, holes.at(i).start);
-			putInMemory(i, p);
-			return true;
-		}
-	}
-
-	return false;
-
-bool putProcessInHole(process *p);
-
-bool worstFit(process *p){}
+bool worstFit(process *p){
 	printf("\nWORST FIT\n");
 
 	findHoles();  //Get updated list of holes
