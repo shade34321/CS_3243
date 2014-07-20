@@ -192,8 +192,6 @@ int main(){
 	to loop for MAX_QUANTA durations 
 	*/
 
-	/*switch(algorithm) {
-
 	/*
 	switch(algorithm) {
 		case FIRST:
