@@ -26,6 +26,7 @@ using namespace std;
 #define PRINT_INTERVAL 		500 	// # of cpu quanta between memory map printouts
 #define MAX_QUANTA 			50000 	// # quanta to run before ending simulation.
 #define SLEEP_LENGTH 		2500 	// Used with the usleep()to slow down sim between
+<<<<<<< HEAD
 									// cycles (makes reading screen in real-time easier!)
 
 #define MAX_PAGE_PER_PROC	20		// The max number of pages per process
@@ -34,12 +35,20 @@ struct page{
 	int frame_id;
 	char valid;
 	// int reference;
+=======
+									// cycles (makes reading screen in real-time easier!)					
+struct segment{
+	int id;				// ID for this segment
+	int numPages;		// Number of pages this seg should have
+	vector<int> pages;  // List of pages owned by this segment
+>>>>>>> master
 };
 
 struct process{
 	int pid;			//PID of the process
 	int processID;		//Character to denote the process.
 	int totalPages;		//Total pages for this process
+<<<<<<< HEAD
 	int lifetime;		//Number of quanta this process lives for
 	int state;	
 	
@@ -48,12 +57,21 @@ struct process{
 
 struct processMap{
 	int pages[MAX_PAGES];				//Total pages of memory
+=======
+	
+	vector<segment> segments; // List of the segments of this process
+};
+
+struct processMap{
+	int memory[MAX_PAGES];				//Total pages of memory
+>>>>>>> master
 	process processes[MAX_PROCESSES];	//array of process we can have.
 	int numProcess;
 	int pagesUsed;
 	int currentQuanta;
 };
 
+<<<<<<< HEAD
 enum p_State {
 	ALIVE = 0,
 	DEAD = 1,
@@ -77,6 +95,12 @@ void printSwapSpace();    	// prints only the swap space pages//TODO
 void printPageTable();    	// prints only the page table//TODO
 
 // Debug Methods
+=======
+processMap pMap;
+
+void initProcesses();
+void createProcess(int, int);
+>>>>>>> master
 void printProcesses();
 
 int main(){
@@ -85,6 +109,7 @@ int main(){
 	// Init all the processes
 	initProcesses();
 	printProcesses();
+<<<<<<< HEAD
 	printStats();
 	printFrames();
 	printSwapSpace();
@@ -104,6 +129,8 @@ int countProcWithState(int state) {
 	}
 	
 	return count;
+=======
+>>>>>>> master
 }
 
 void initProcesses(){
@@ -113,12 +140,17 @@ void initProcesses(){
 	createProcess(0, 64); //create kernel process
 
 	for (i = 65; i < 87; i++){	
+<<<<<<< HEAD
 			createProcess(j, i); //create A-V
+=======
+			createProcess(j, i);
+>>>>>>> master
 			j++;
 	}
 }
 
 void createProcess(int index, int processID){
+<<<<<<< HEAD
 	int totalPages = 0;
 	int life;
 	
@@ -136,6 +168,35 @@ void createProcess(int index, int processID){
 		totalPages += 3;
 		
 		// Heap segment
+=======
+	vector<segment> segs;
+	segment temp;
+	int totalPages = 0;
+	
+	if (processID == 64){
+		temp.numPages = 20;
+		temp.id = 0;
+		segs.push_back(temp);
+		totalPages = 20;
+	}
+	else {
+		// Code segment
+		temp.numPages = 2;
+		temp.id = 0;
+		segs.push_back(temp);
+		totalPages += 2;
+		
+		// Stack segment
+		temp.numPages = 3;
+		temp.id = 1;
+		segs.push_back(temp);
+		totalPages += 3;
+		
+		// Heap segment
+		temp.numPages = 5;
+		temp.id = 2;
+		segs.push_back(temp);
+>>>>>>> master
 		totalPages += 5;
 		
 		// Subroutine segments
@@ -143,6 +204,12 @@ void createProcess(int index, int processID){
 
 		for(int i = 3; i < (3 + num_of_subs); i++)
 		{
+<<<<<<< HEAD
+=======
+			temp.numPages = 2;
+			temp.id = i;
+			segs.push_back(temp);
+>>>>>>> master
 			totalPages += 2;
 		}
 	}
@@ -150,12 +217,18 @@ void createProcess(int index, int processID){
 	pMap.processes[index].pid = index;
 	pMap.processes[index].processID = processID;
 	pMap.processes[index].totalPages = totalPages;
+<<<<<<< HEAD
 	pMap.processes[index].state = ((processID == 64) ? (ALIVE) : (REMOVED));
 	pMap.processes[index].lifetime = life;	
+=======
+	pMap.processes[index].segments = segs;
+	pMap.numProcess++;
+>>>>>>> master
 }
 
 void printProcesses() {	
 	process p;
+<<<<<<< HEAD
 	printf("\nProcID\tPID\tPages\tState\tLife\n");
 	
 	for(int i = 0; i < PROCESS_COUNT; i++)
@@ -356,4 +429,14 @@ void printSwapSpace() {
 		}
 
 		printf("%s\n", string(OUT_MAX, '=').c_str());
+=======
+	printf("\nProcID\tPID\tSegs\tPages\n");
+	
+	for(int i = 0; i < pMap.numProcess; i++)
+	{
+		p = pMap.processes[i];
+		
+		printf("%c\t%d\t%lu\t%d\n", p.processID, p.pid, p.segments.size(), p.totalPages);
+	}
+>>>>>>> master
 }
