@@ -41,7 +41,7 @@ struct process{
 	int processID;		//Character to denote the process.
 	int totalPages;		//Total pages for this process
 	int lifetime;		//Number of quanta this process lives for
-	int state;			// 1 = alive, 0 = dead
+	int state;			
 	
 	vector<segment> segments; // List of the segments of this process
 };
