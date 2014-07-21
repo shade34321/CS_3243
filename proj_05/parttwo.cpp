@@ -30,10 +30,10 @@ using namespace std;
 
 #define MAX_PAGE_PER_PROC	20		// The max number of pages per process
 				
-struct segment{
-	int id;				// ID for this segment
-	int numPages;		// Number of pages this seg should have
-	vector<int> pages;  // List of pages owned by this segment
+struct page{
+	int frame_id;
+	char valid;
+	// int reference;
 };
 
 struct process{
@@ -41,9 +41,9 @@ struct process{
 	int processID;		//Character to denote the process.
 	int totalPages;		//Total pages for this process
 	int lifetime;		//Number of quanta this process lives for
-	int state;			
+	int state;	
 	
-	vector<segment> segments; // List of the segments of this process
+	page pageTable[MAX_PAGE_PER_PROC]; 		
 };
 
 struct processMap{
@@ -91,7 +91,7 @@ int main(){
 }
 
 int getLifeTime(){
-	return (rand() % MAX_DEATH_INTERVAL + MIN_DEATH_INTERVAL);
+	return rand() % MAX_DEATH_INTERVAL + MIN_DEATH_INTERVAL;
 }
 
 int countProcWithState(int state) {
@@ -119,37 +119,23 @@ void initProcesses(){
 }
 
 void createProcess(int index, int processID){
-	vector<segment> segs;
-	segment temp;
-
 	int totalPages = 0;
 	int life;
 	
 	if (processID == 64){
-		temp.numPages = 20;
-		temp.id = 0;
-		segs.push_back(temp);
 		totalPages = 20;
 		life = -1;
 	}
 	else {
-		// Code segment
-		temp.numPages = 2;
-		temp.id = 0;
-		segs.push_back(temp);
-		totalPages += 2;
 		life = getLifeTime();
 		
+		// Code segment
+		totalPages += 2;
+		
 		// Stack segment
-		temp.numPages = 3;
-		temp.id = 1;
-		segs.push_back(temp);
 		totalPages += 3;
 		
 		// Heap segment
-		temp.numPages = 5;
-		temp.id = 2;
-		segs.push_back(temp);
 		totalPages += 5;
 		
 		// Subroutine segments
@@ -157,26 +143,20 @@ void createProcess(int index, int processID){
 
 		for(int i = 3; i < (3 + num_of_subs); i++)
 		{
-			temp.numPages = 2;
-			temp.id = i;
-			segs.push_back(temp);
 			totalPages += 2;
 		}
-		
-		
 	}
 	
 	pMap.processes[index].pid = index;
 	pMap.processes[index].processID = processID;
 	pMap.processes[index].totalPages = totalPages;
-	pMap.processes[index].segments = segs;
 	pMap.processes[index].state = ((processID == 64) ? (ALIVE) : (REMOVED));
-	pMap.processes[index].lifetime = life;
+	pMap.processes[index].lifetime = life;	
 }
 
 void printProcesses() {	
 	process p;
-	printf("\nProcID\tPID\tSegs\tPages\tState\tLife\n");
+	printf("\nProcID\tPID\tPages\tState\tLife\n");
 	
 	for(int i = 0; i < PROCESS_COUNT; i++)
 	{
@@ -195,7 +175,7 @@ void printProcesses() {
 			break;
 		}
 		
-		printf("%c\t%d\t%lu\t%d\t%s\t%d\n", p.processID, p.pid, p.segments.size(), p.totalPages, st.c_str(), p.lifetime);
+		printf("%c\t%d\t%d\t%s\t%d\n", p.processID, p.pid, p.totalPages, st.c_str(), p.lifetime);
 	}
 }
 
