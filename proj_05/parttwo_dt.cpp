@@ -4,6 +4,12 @@
 //Shade Alabsa, Duncuan Thomas, Matthew Trussell
 //Date: 19 July 2014
 //File: partone.cpp
+
+//the single overall page table is broken right now and completely circumvented.
+//no method for inserting into memory, deciding what to take out of memory, or printing
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -41,7 +47,7 @@ struct process{
 	//int pageTable2[20];
 };
 
-struct mainMem {
+struct main_Mem {
 	page * memory[MAX_FRAMES]; 
 };
 
@@ -51,25 +57,32 @@ struct back_store {
 
 struct page_table {
 	page* pTable[MAX_PAGES];
-	bool valid;
-	bool ref;
+	int pTable2[MAX_PAGES];
+	bool valid[MAX_PAGES];
+	bool ref[MAX_PAGES];
 };
 
-back_store backStore;
-page * pTable[MAX_PAGES];
+
 
 void initProcesses();
+void initPageTable();
 process createKernal();
 process createProcess(char);
 void touchProcess();
+void killProcess(process *);
+
 void printMemory();
 void printBackStore();
 void printProcess();
 void printMemoryMap();
+
 bool putInMemory(int, process *);
-bool putInBackStore(int, process *);
+void putInBackStore(process *, int);
 
 process processList[PROCESS_COUNT];
+page_table pTable;
+back_store backStore;
+main_Mem mainMem;
 
 //because I realized that I created all processes at the start and had no way of dealing with dead ones
 process aliveProcess[PROCESS_COUNT]; //(and didn't want to change it)
@@ -77,6 +90,7 @@ process aliveProcess[PROCESS_COUNT]; //(and didn't want to change it)
 int main(){//#######MAIN########
 	//srand(time(NULL)); //Turn off for debug.
 	initProcesses();
+	initPageTable();
 	for (int i=0; i<23; i++) {
 		cout << aliveProcess[i].processID << endl;
 	}
@@ -91,6 +105,7 @@ int main(){//#######MAIN########
 	for (int i=0; i<23; i++) {
 		cout << aliveProcess[i].processID<< endl;
 	}
+	cout << backStore.backMem[2] << endl;
 	
 	
 }
@@ -106,6 +121,13 @@ void initProcesses(){ //creates all processes for all letters; puts them into pr
 	}
 	for (int i=0; i<PROCESS_COUNT; i++) {
 		aliveProcess[i]=createProcess('-');
+	}
+}
+
+void initPageTable(){
+	for (int i=0; i<MAX_PAGES; i++) {
+		pTable.ref[i]=false;
+		pTable.pTable2[i]=-1;
 	}
 }
 
@@ -170,8 +192,13 @@ void putInMemory(/*process *, page number*/){
 	//update pagetable
 }
 
-void putInBackStore(/*process *, page number*/){
-	//copy to free location in backStore
+void putInBackStore(process * proc, int pNum){
+	process temp = *proc;
+	for (int i=0; i<MAX_PAGES; i++) {
+		if (backStore.backMem[i]==0) {
+			backStore.backMem[i]=&temp.pageTable[pNum];
+		}
+	}
 }
 
 
@@ -182,7 +209,7 @@ void touchProcess(){
 	cout << "rand temp= " << randTemp << endl; //DEBUG
 	bool isAlive = false;
 	process temp1 = processList[randTemp];
-	//process *tempt2 = &temp1;
+	page * temp2;
 	for (int i=0; i<PROCESS_COUNT; i++) {
 		if(aliveProcess[i].processID==temp1.processID){
 			isAlive = true;
@@ -196,16 +223,61 @@ void touchProcess(){
 				break;
 			}
 		}
+		//load all pages into page table
+		for (int i=0; processList[randTemp].pageTable[i].valid == 'v'; i++) {
+			for (int j=0; i<MAX_PAGES; j++) {
+				if (!pTable.ref[j]) {
+					temp2=&(temp1.pageTable[i]);
+					pTable.pTable[j]=temp2;
+					pTable.valid[j]=true;
+					break;
+				}
+			}
+		}
 		//load all into backingStore
+		for (int i=0; temp1.pageTable[i].valid == 'v'; i++) {
+			putInBackStore(&temp1, i);
+		}
 	}
-	//search pageTable for pages 0-9 and one random valid page >9
+	//search inner pageTable for pages 0-9 and one random valid page >9
+	//aliveProcess[i]=processList[randTemp];
 	//check pagetable to see if they're 
+	/*process temp555;
+	for (int i=0; i<MAX_PAGES; i++) {
+		temp555 = *pTable.pTable[i];
+		if (temp555.processID==processList[randTemp].processID && pTable.pTable2[i] != -1) {
+			;
+		}
+	}*/
 	//put missing shit in mainMem
-	//update pageTable
+	bool exists=false;
+	for (int j=0; j<11; j++) {
+		for (int i=0; i<MAX_FRAMES; i++) {
+			if (mainMem.memory[i]==&(processList[randTemp].pageTable[j])) {
+				exists=true;
+				break;
+			}
+		}
+		if(!exists){
+			putInMemory();
+		}
+	}
+	
+	//update pageTable (pagetable is so broken right now it's not even funny)
 	//--timeAlive
+	processList[randTemp].timeAlive--;
 	//if timeAlive<1 killProcess()
+	if (processList[randTemp].timeAlive==0) {
+		killProcess(&(processList[randTemp]));
+	}
 }
-void killProcess(process *){
+void killProcess(process * proc){
 	//overwrite with '-' in aliveProcesses[]
+	for (int i=0; i<MAX_PROCESSES; i++) {
+		if ((*proc).processID == aliveProcess[i].processID) {
+			aliveProcess[i]=createProcess('-');
+		}
+	}
 	//give new timeAlive
+	(*proc).timeAlive=20+rand()%280;
 }
