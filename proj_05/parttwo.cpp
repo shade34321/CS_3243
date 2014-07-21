@@ -62,6 +62,7 @@ enum p_State {
 
 processMap pMap;
 
+
 // Methods
 void initProcesses();
 void createProcess(int, int);
@@ -86,6 +87,7 @@ int main(){
 	printProcesses();
 	printStats();
 	printFrames();
+	printSwapSpace();
 }
 
 int getLifeTime(){
@@ -265,10 +267,10 @@ void printFrames() {
 	char output[OUT_MAX];
 	memset(output, 0, OUT_MAX);
 
-		printf("Physical Memory (Frames)\n");
+		printf("\nPhysical Memory (Frames)\n");
 		printf("%s\n", string(OUT_MAX, '=').c_str());
 
-		for (int i = 0; i < MAX_FRAMES; i += OUT_MAX){
+		for (int i = 0; i < MAX_FRAMES; i += (OUT_MAX/2)){
 
 			// print the top numbers
 			for (int j = (i + 4); j < (i + (OUT_MAX/2)); j += 5) {
@@ -279,6 +281,64 @@ void printFrames() {
 					sprintf(output, "%s", "--");
 				}
 			
+				if ((j + 1) % OUT_MAX == 0){
+					printf("%10s\n", output);
+				}
+				else {
+					printf("%10s", output);
+				}
+			}
+
+			// print the fancy lines
+			for (int j = 0; j < SEG_PER_LINE; j++){
+				if ((j + 1) % SEG_PER_LINE == 0){
+					printf("--------++--------||\n");
+				}
+				else {
+					printf("--------++--------||");
+				}
+			}
+
+			// print the process ids
+			//for (int j = i; j < (i + OUT_MAX); j++){
+				/*if (pMap.memory[j] != -1){
+					sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
+				}
+				else {
+					sprintf(output, " ");
+				}
+
+				if ((j + 1) % OUT_MAX == 0){
+					printf("%s\n", output);
+				}
+				else {
+					printf("%s", output);
+				}*/
+			//}
+		}
+
+		printf("%s\n", string(OUT_MAX, '=').c_str());
+}
+
+void printSwapSpace() {
+	const int OUT_MAX = 120;
+	const int NUM_PER_LINE = 12;
+	const int SEG_PER_LINE = 6;
+	
+	char output[OUT_MAX];
+	memset(output, 0, OUT_MAX);
+
+		printf("\nSwap Space (Pages)\n");
+		printf("%s\n", string(OUT_MAX, '=').c_str());
+		
+
+		for (int i = 0; i < MAX_PAGES; i += (OUT_MAX/2)){
+			
+			// print the top numbers
+			for (int j = (i + 4); j < (i + (OUT_MAX/2)); j += 5) {
+		
+				sprintf(output, "%02d", j);
+
 				if ((j + 1) % OUT_MAX == 0){
 					printf("%10s\n", output);
 				}
