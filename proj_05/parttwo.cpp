@@ -26,7 +26,10 @@ using namespace std;
 #define PRINT_INTERVAL 		500 	// # of cpu quanta between memory map printouts
 #define MAX_QUANTA 			50000 	// # quanta to run before ending simulation.
 #define SLEEP_LENGTH 		2500 	// Used with the usleep()to slow down sim between
-									// cycles (makes reading screen in real-time easier!)					
+									// cycles (makes reading screen in real-time easier!)
+
+#define MAX_PAGE_PER_PROC	20		// The max number of pages per process
+				
 struct segment{
 	int id;				// ID for this segment
 	int numPages;		// Number of pages this seg should have
@@ -37,16 +40,24 @@ struct process{
 	int pid;			//PID of the process
 	int processID;		//Character to denote the process.
 	int totalPages;		//Total pages for this process
+	int lifetime;		//Number of quanta this process lives for
+	int state;			// 1 = alive, 0 = dead
 	
 	vector<segment> segments; // List of the segments of this process
 };
 
 struct processMap{
-	int memory[MAX_PAGES];				//Total pages of memory
+	int pages[MAX_PAGES];				//Total pages of memory
 	process processes[MAX_PROCESSES];	//array of process we can have.
 	int numProcess;
 	int pagesUsed;
 	int currentQuanta;
+};
+
+enum p_State {
+	ALIVE = 0,
+	DEAD = 1,
+	REMOVED = 2
 };
 
 processMap pMap;
@@ -54,9 +65,15 @@ processMap pMap;
 // Methods
 void initProcesses();
 void createProcess(int, int);
+int getLifeTime();
+int countProcWithState(int);
 
 // Print Methods
-void printMemoryMap();
+void printAllTheThings(); 	// prints all the things//TODO
+void printStats();  		// prints only the memory stats
+void printFrames();       	// prints only the memory frames//TODO
+void printSwapSpace();    	// prints only the swap space pages//TODO
+void printPageTable();    	// prints only the page table//TODO
 
 // Debug Methods
 void printProcesses();
@@ -67,7 +84,24 @@ int main(){
 	// Init all the processes
 	initProcesses();
 	printProcesses();
-	printMemoryMap();
+	printStats();
+	printFrames();
+}
+
+int getLifeTime(){
+	return (rand() % MAX_DEATH_INTERVAL + MIN_DEATH_INTERVAL);
+}
+
+int countProcWithState(int state) {
+	int count = 0;
+	
+	for(int i = 0; i < PROCESS_COUNT; i++) {
+		if (pMap.processes[i].state == state) {
+			count++;
+		}
+	}
+	
+	return count;
 }
 
 void initProcesses(){
@@ -77,7 +111,7 @@ void initProcesses(){
 	createProcess(0, 64); //create kernel process
 
 	for (i = 65; i < 87; i++){	
-			createProcess(j, i);
+			createProcess(j, i); //create A-V
 			j++;
 	}
 }
@@ -85,13 +119,16 @@ void initProcesses(){
 void createProcess(int index, int processID){
 	vector<segment> segs;
 	segment temp;
+
 	int totalPages = 0;
+	int life;
 	
 	if (processID == 64){
 		temp.numPages = 20;
 		temp.id = 0;
 		segs.push_back(temp);
 		totalPages = 20;
+		life = -1;
 	}
 	else {
 		// Code segment
@@ -99,6 +136,7 @@ void createProcess(int index, int processID){
 		temp.id = 0;
 		segs.push_back(temp);
 		totalPages += 2;
+		life = getLifeTime();
 		
 		// Stack segment
 		temp.numPages = 3;
@@ -122,33 +160,49 @@ void createProcess(int index, int processID){
 			segs.push_back(temp);
 			totalPages += 2;
 		}
+		
+		
 	}
 	
 	pMap.processes[index].pid = index;
 	pMap.processes[index].processID = processID;
 	pMap.processes[index].totalPages = totalPages;
 	pMap.processes[index].segments = segs;
-	pMap.numProcess++;
+	pMap.processes[index].state = ((processID == 64) ? (ALIVE) : (REMOVED));
+	pMap.processes[index].lifetime = life;
 }
 
 void printProcesses() {	
 	process p;
-	printf("\nProcID\tPID\tSegs\tPages\n");
+	printf("\nProcID\tPID\tSegs\tPages\tState\tLife\n");
 	
-	for(int i = 0; i < pMap.numProcess; i++)
+	for(int i = 0; i < PROCESS_COUNT; i++)
 	{
 		p = pMap.processes[i];
+		std::string st;
+		switch(p.state) {
+			case ALIVE:
+			st = "ALIVE";
+			break;
+			case DEAD:
+			st = "DEAD";
+			break;
+			case REMOVED:
+			default:
+			st = "REMOVED";
+			break;
+		}
 		
-		printf("%c\t%d\t%lu\t%d\n", p.processID, p.pid, p.segments.size(), p.totalPages);
+		printf("%c\t%d\t%lu\t%d\t%s\t%d\n", p.processID, p.pid, p.segments.size(), p.totalPages, st.c_str(), p.lifetime);
 	}
 }
 
-void printMemoryMap() {
+void printStats() {
 	
-	int framesUsed = 0;
-	double framesUsedPercent = 0;
-	int framesFree = 0;
-	double framesFreePercent = 0;
+	int framesUsed = pMap.pagesUsed;
+	double framesUsedPercent = framesUsed / MAX_FRAMES;
+	int framesFree = MAX_FRAMES - framesUsed;
+	double framesFreePercent = framesFree / MAX_FRAMES;
 	
 	int pagesCount = 0;
 	double pagesCountPercent = 0;
@@ -159,12 +213,12 @@ void printMemoryMap() {
 	int pagesFree = 0;
 	double pagesFreePercent = 0;
 	
-	int processesLoaded = 0;
-	double processesLoadedPercent = 0;
-	int processesUnloaded = 0;
-	double processesUnloadedPercent = 0;
-	int processesDead = 0;
-	double processesDeadPercent = 0;
+	int processesLoaded = pMap.numProcess;
+	double processesLoadedPercent = processesLoaded / MAX_PROCESSES;
+	int processesUnloaded = MAX_PROCESSES - processesLoaded;
+	double processesUnloadedPercent = processesUnloaded / MAX_PROCESSES;
+	int processesDead = countProcWithState(DEAD);
+	double processesDeadPercent = processesDead / MAX_PROCESSES;;
 	
 	char output[120];
 	
@@ -200,6 +254,66 @@ void printMemoryMap() {
 	sprintf(output, "DEAD: %d (%.2f%%)", processesDead, processesDeadPercent);
 	printf("%-25s\n", output);
 
-	printf("%s\n", string(80, '=').c_str());
+	printf("%s\n", string(120, '=').c_str());	
+}
+
+void printFrames() {
+	const int OUT_MAX = 120;
+	const int NUM_PER_LINE = 12;
+	const int SEG_PER_LINE = 6;
 	
+	char output[OUT_MAX];
+	memset(output, 0, OUT_MAX);
+
+		printf("Physical Memory (Frames)\n");
+		printf("%s\n", string(OUT_MAX, '=').c_str());
+
+		for (int i = 0; i < MAX_FRAMES; i += OUT_MAX){
+
+			// print the top numbers
+			for (int j = (i + 4); j < (i + (OUT_MAX/2)); j += 5) {
+				if(j <= 280) {
+					sprintf(output, "%02d", j);
+				} 
+				else {
+					sprintf(output, "%s", "--");
+				}
+			
+				if ((j + 1) % OUT_MAX == 0){
+					printf("%10s\n", output);
+				}
+				else {
+					printf("%10s", output);
+				}
+			}
+
+			// print the fancy lines
+			for (int j = 0; j < SEG_PER_LINE; j++){
+				if ((j + 1) % SEG_PER_LINE == 0){
+					printf("--------++--------||\n");
+				}
+				else {
+					printf("--------++--------||");
+				}
+			}
+
+			// print the process ids
+			//for (int j = i; j < (i + OUT_MAX); j++){
+				/*if (pMap.memory[j] != -1){
+					sprintf(output, "%c", (char)pMap.processes[pMap.memory[j]].processID);
+				}
+				else {
+					sprintf(output, " ");
+				}
+
+				if ((j + 1) % OUT_MAX == 0){
+					printf("%s\n", output);
+				}
+				else {
+					printf("%s", output);
+				}*/
+			//}
+		}
+
+		printf("%s\n", string(OUT_MAX, '=').c_str());
 }
